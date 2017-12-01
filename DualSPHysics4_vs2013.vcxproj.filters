@@ -300,9 +300,6 @@
     <ClCompile Include="Source\JTimeOut.cpp">
       <Filter>Source</Filter>
     </ClCompile>
-    <ClCompile Include="ItemTest2.cpp">
-      <Filter>Cuda</Filter>
-    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <CustomBuildStep Include="Source\JTimerCuda.h">
