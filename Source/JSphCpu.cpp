@@ -907,8 +907,13 @@ template<bool psimple,TpKernel tker,TpFtMode ftmode,bool lamsps,TpDeltaSph tdelt
             //===== Acceleration ===== 
             if(compute){
 				const float prs = (pressp1 + porep1 + press[p2] + pore[p2]) / (rhopp1*velrhop[p2].w) + (tker == KERNEL_Cubic ? GetKernelCubicTensil(rr2, rhopp1, pressp1 + porep1, velrhop[p2].w, press[p2]+pore[p2]) : 0);
-              const float p_vpm=-prs*massp2*ftmassp1;
-              acep1.x+=p_vpm*frx; acep1.y+=p_vpm*fry; acep1.z+=p_vpm*frz;
+//				const float p_vpm = -prs*massp2*ftmassp1;
+				const tsymatrix3f p_vpm3 = -prs*massp2*ftmassp1*{ 1, 1, 1, 0, 0, 0 };
+				// Pointless
+//			  acep1.x += p_vpm*frx; acep1.y += p_vpm*fry; acep1.z += p_vpm*frz;
+			  acep1.x += p_vpm3.xx*frx + p_vpm3.xy*fry + p_vpm3.xz*frz;
+			  acep1.y += p_vpm3.xy*frx + p_vpm3.yy*fry + p_vpm3.yz*frz; 
+			  acep1.z += p_vpm3.xz*frx + p_vpm3.yz*fry + p_vpm3.zz*frz;
             }
 
             //-Density derivative
