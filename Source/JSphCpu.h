@@ -102,6 +102,7 @@ protected:
   //-Variables for computing forces [INTER_Forces,INTER_ForcesCorr] / Vars. derivadas para computo de fuerzas [INTER_Forces,INTER_ForcesCorr]
   float *Pressc;     ///< Press[]=B*((Rhop/Rhop0)^gamma-1)
   float *Pore; ///[ PorePressure variable - SPACE DATA
+  tsymatrix3f *S;
 
   //-Variables for Laminar+SPS viscosity.  
   tsymatrix3f *SpsTauc;       ///<SPS sub-particle stress tensor.
@@ -179,7 +180,7 @@ protected:
     ,const unsigned *beginendcell,tint3 cellzero,const unsigned *dcell
     ,const tsymatrix3f* tau,tsymatrix3f* gradvel
     ,const tdouble3 *pos,const tfloat3 *pspos,const tfloat4 *velrhop,const word *code,const unsigned *idp
-	, const float *press, const float *pore
+	, const float *press, const float *pore, const tsymatrix3f *S
     ,float &viscdt,float *ar,tfloat3 *ace,float *delta
     ,TpShifting tshifting,tfloat3 *shiftpos,float *shiftdetect)const;
 
@@ -194,7 +195,7 @@ protected:
     (unsigned np,unsigned npb,unsigned npbok
     ,tuint3 ncells,const unsigned *begincell,tuint3 cellmin,const unsigned *dcell
     ,const tdouble3 *pos,const tfloat3 *pspos,const tfloat4 *velrhop,const word *code,const unsigned *idp
-	, const float *press, const float *pore
+	, const float *press, const float *pore, const tsymatrix3f *s
     ,float &viscdt,float* ar,tfloat3 *ace,float *delta
     ,tsymatrix3f *spstau,tsymatrix3f *spsgradvel
     ,TpShifting tshifting,tfloat3 *shiftpos,float *shiftdetect)const;
@@ -202,7 +203,7 @@ protected:
   void Interaction_Forces(unsigned np,unsigned npb,unsigned npbok
     ,tuint3 ncells,const unsigned *begincell,tuint3 cellmin,const unsigned *dcell
     ,const tdouble3 *pos,const tfloat4 *velrhop,const unsigned *idp,const word *code
-	, const float *press, const float *pore
+	, const float *press, const float *pore, const tsymatrix3f *s
     ,float &viscdt,float* ar,tfloat3 *ace,float *delta
     ,tsymatrix3f *spstau,tsymatrix3f *spsgradvel
     ,tfloat3 *shiftpos,float *shiftdetect)const;
@@ -210,7 +211,7 @@ protected:
   void InteractionSimple_Forces(unsigned np,unsigned npb,unsigned npbok
     ,tuint3 ncells,const unsigned *begincell,tuint3 cellmin,const unsigned *dcell
     ,const tfloat3 *pspos,const tfloat4 *velrhop,const unsigned *idp,const word *code
-	, const float *press, const float *pore
+	, const float *press, const float *pore, const tsymatrix3f *s
     ,float &viscdt,float* ar,tfloat3 *ace,float *delta
     ,tsymatrix3f *spstau,tsymatrix3f *spsgradvel
     ,tfloat3 *shiftpos,float *shiftdetect)const;
