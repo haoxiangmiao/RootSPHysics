@@ -897,7 +897,7 @@ template<bool psimple,TpKernel tker,TpFtMode ftmode,bool lamsps,TpDeltaSph tdelt
   ,const unsigned *beginendcell,tint3 cellzero,const unsigned *dcell
   , const tsymatrix3f* tau, tsymatrix3f* gradvel, tsymatrix3f* omega
   ,const tdouble3 *pos,const tfloat3 *pspos,const tfloat4 *velrhop,const word *code,const unsigned *idp
-  , const float *press, const float *pore, const tsymatrix3f *S
+  , const float *press, const float *pore, const tsymatrix3f *s
   ,float &viscdt,float *ar,tfloat3 *ace,float *delta
   ,TpShifting tshifting,tfloat3 *shiftpos,float *shiftdetect)const
 {
@@ -937,7 +937,7 @@ template<bool psimple,TpKernel tker,TpFtMode ftmode,bool lamsps,TpDeltaSph tdelt
     const tsymatrix3f taup1=(lamsps? tau[p1]: gradvelp1);
 
 	const float porep1 = pore[p1];
-	const tsymatrix3f Sp1 = S[p1];
+	const tsymatrix3f Sp1 = s[p1];
 
     //-Obtain interaction limits / Obtiene limites de interaccion
     int cxini,cxfin,yini,yfin,zini,zfin;
@@ -984,12 +984,12 @@ template<bool psimple,TpKernel tker,TpFtMode ftmode,bool lamsps,TpDeltaSph tdelt
             if(compute){
 //				const float prs = (pressp1 + porep1 + Sp1 + press[p2] + pore[p2]) / (rhopp1*velrhop[p2].w) + (tker == KERNEL_Cubic ? GetKernelCubicTensil(rr2, rhopp1, pressp1 + porep1, velrhop[p2].w, press[p2]+pore[p2]) : 0);
 				const tsymatrix3f prs = {
-					(pressp1 + porep1 + Sp1.xx + press[p2] + pore[p2] + S[p2].xx) / (rhopp1*velrhop[p2].w) + (tker == KERNEL_Cubic ? GetKernelCubicTensil(rr2, rhopp1, pressp1 + porep1, velrhop[p2].w, press[p2] + pore[p2]) : 0),
-					(Sp1.xy + S[p2].xy) / (rhopp1*velrhop[p2].w),
-					(Sp1.xz + S[p2].xz) / (rhopp1*velrhop[p2].w),
-					(pressp1 + porep1 + Sp1.yy + press[p2] + pore[p2] + S[p2].yy) / (rhopp1*velrhop[p2].w) + (tker == KERNEL_Cubic ? GetKernelCubicTensil(rr2, rhopp1, pressp1 + porep1, velrhop[p2].w, press[p2] + pore[p2]) : 0),
-					(Sp1.yz + S[p2].yz) / (rhopp1*velrhop[p2].w),
-					(pressp1 + porep1 + Sp1.zz + press[p2] + pore[p2] + S[p2].zz) / (rhopp1*velrhop[p2].w) + (tker == KERNEL_Cubic ? GetKernelCubicTensil(rr2, rhopp1, pressp1 + porep1, velrhop[p2].w, press[p2] + pore[p2]) : 0)
+					(pressp1 + porep1 + Sp1.xx + press[p2] + pore[p2] + s[p2].xx) / (rhopp1*velrhop[p2].w) + (tker == KERNEL_Cubic ? GetKernelCubicTensil(rr2, rhopp1, pressp1 + porep1, velrhop[p2].w, press[p2] + pore[p2]) : 0),
+					(Sp1.xy + s[p2].xy) / (rhopp1*velrhop[p2].w),
+					(Sp1.xz + s[p2].xz) / (rhopp1*velrhop[p2].w),
+					(pressp1 + porep1 + Sp1.yy + press[p2] + pore[p2] + s[p2].yy) / (rhopp1*velrhop[p2].w) + (tker == KERNEL_Cubic ? GetKernelCubicTensil(rr2, rhopp1, pressp1 + porep1, velrhop[p2].w, press[p2] + pore[p2]) : 0),
+					(Sp1.yz + s[p2].yz) / (rhopp1*velrhop[p2].w),
+					(pressp1 + porep1 + Sp1.zz + press[p2] + pore[p2] + s[p2].zz) / (rhopp1*velrhop[p2].w) + (tker == KERNEL_Cubic ? GetKernelCubicTensil(rr2, rhopp1, pressp1 + porep1, velrhop[p2].w, press[p2] + pore[p2]) : 0)
 				};
 				const tsymatrix3f p_vpm3 = { 
 					-prs.xx*massp2*ftmassp1, -prs.xy*massp2*ftmassp1, -prs.xz*massp2*ftmassp1,
@@ -1320,7 +1320,7 @@ template<bool psimple,TpKernel tker,TpFtMode ftmode,bool lamsps,TpDeltaSph tdelt
     if(USE_DEM)InteractionForcesDEM<psimple> (CaseNfloat,nc,hdiv,cellfluid,begincell,cellzero,dcell,FtRidp,DemObjs,pos,pspos,velrhop,code,idp,viscdt,ace);
 
     //-Computes tau for Laminar+SPS.
-    if(lamsps)ComputeSpsTau(npf,npb,velrhop,spsgradvel,spstau);
+    ComputeSpsTau(npf,npb,velrhop,spsgradvel,spstau);
 
 	// Deviatoric Stress computation
 	ComputeSdot(npf, npb, sdot, s, spsgradvel, omega);

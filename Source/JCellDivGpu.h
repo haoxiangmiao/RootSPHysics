@@ -146,7 +146,7 @@ public:
   void SortDataArrays(const double2 *a,const double *b,const float4 *c,double2 *a2,double *b2,float4 *c2);
   void SortDataArrays(const tsymatrix3f *a,tsymatrix3f *a2);
 
-  void CheckParticlesOut(unsigned npfout,const unsigned *idp,const tdouble3 *pos,const float *rhop,const tsymatrix3f *s,const word *code);
+  void CheckParticlesOut(unsigned npfout,const unsigned *idp,const tdouble3 *pos,const float *rhop,const word *code);
   float* GetAuxMem(unsigned size);
 
   TpCellMode GetCellMode()const{ return(CellMode); }

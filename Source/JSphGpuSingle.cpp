@@ -420,8 +420,8 @@ void JSphGpuSingle::RunCellDivide(bool updateperiodic){
   unsigned npout=CellDivSingle->GetNpOut();
   if(npout){
     ParticlesDataDown(npout,Np,true,true,false);
-    CellDivSingle->CheckParticlesOut(npout,Idp,AuxPos,AuxRhop,AuxS,Code);
-	AddParticlesOut(npout, Idp, AuxPos, AuxVel, AuxRhop, AuxS, CellDivSingle->GetNpfOutRhop(), CellDivSingle->GetNpfOutMove());
+    CellDivSingle->CheckParticlesOut(npout,Idp,AuxPos,AuxRhop,Code);
+	AddParticlesOut(npout, Idp, AuxPos, AuxVel, AuxRhop, CellDivSingle->GetNpfOutRhop(), CellDivSingle->GetNpfOutMove());
   }
   TmgStop(Timers,TMG_NlOutCheck);
   BoundChanged=false;

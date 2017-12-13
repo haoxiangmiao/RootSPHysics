@@ -146,7 +146,7 @@ void JSphCpuSingle::ConfigDomain(){
   memcpy(Posc,PartsLoaded->GetPos(),sizeof(tdouble3)*Np);
   memcpy(Idpc, PartsLoaded->GetIdp(), sizeof(unsigned)*Np);
   memcpy(Velrhopc, PartsLoaded->GetVelRhop(), sizeof(tfloat4)*Np);
-  memcpy(S, PartsLoaded->GetS(), sizeof(tsymatrix3f)*Np);
+  memcpy(s, PartsLoaded->GetS(), sizeof(tsymatrix3f)*Np);
 
   //-Calculate floating radius / Calcula radio de floatings.
   if(CaseNfloat && PeriActive!=0 && !PartBegin)CalcFloatingRadius(Np,Posc,Idpc);
@@ -395,7 +395,7 @@ void JSphCpuSingle::RunPeriodic(){
             run=false;
             //-Crea nuevas particulas periodicas duplicando las particulas de la lista.
             //-Create new duplicate periodic particles in the list
-            if(TStep==STEP_Verlet)PeriodicDuplicateVerlet(count,Np,DomCells,perinc,listp,Idpc,Codec,Dcellc,Posc,Velrhopc,S,SpsTauc,VelrhopM1c,SM1);
+            if(TStep==STEP_Verlet)PeriodicDuplicateVerlet(count,Np,DomCells,perinc,listp,Idpc,Codec,Dcellc,Posc,Velrhopc,s,SpsTauc,VelrhopM1c,SM1);
             if(TStep==STEP_Symplectic){
               if((PosPrec || VelrhopPrec) && (!PosPrec || !VelrhopPrec))RunException(met,"Symplectic data is invalid.") ;
               PeriodicDuplicateSymplectic(count,Np,DomCells,perinc,listp,Idpc,Codec,Dcellc,Posc,Velrhopc,SpsTauc,PosPrec,VelrhopPrec);
@@ -455,7 +455,7 @@ void JSphCpuSingle::RunCellDivide(bool updateperiodic){
 //  if (TVisco == VISCO_LaminarSPS)CellDivSingle->SortArray(SpsTauc);
   CellDivSingle->SortArray(SpsTauc);
 //  Log->Print(string("FlagDivide3.9"));
-  CellDivSingle->SortArray(S);
+  CellDivSingle->SortArray(s);
 //  Log->Print(string("FlagDivide4"));
   //-Collect divide data / Recupera datos del divide.
   Np=CellDivSingle->GetNpFinal();
@@ -528,8 +528,8 @@ void JSphCpuSingle::Interaction_Forces(TpInter tinter){
   //-Interaction of Fluid-Fluid/Bound & Bound-Fluid (forces and DEM) / Interaccion Fluid-Fluid/Bound & Bound-Fluid (forces and DEM).
   float viscdt = 0;
 //  Log->Printf("FlagInteraction2\n");
-  if(Psimple)JSphCpu::InteractionSimple_Forces(Np,Npb,NpbOk,CellDivSingle->GetNcells(),CellDivSingle->GetBeginCell(),CellDivSingle->GetCellDomainMin(),Dcellc,PsPosc,Velrhopc,Idpc,Codec,Pressc,Pore,S,Sdot,viscdt,Arc,Acec,Deltac,SpsTauc,SpsGradvelc,Omega,ShiftPosc,ShiftDetectc);
-  else JSphCpu::Interaction_Forces(Np,Npb,NpbOk,CellDivSingle->GetNcells(),CellDivSingle->GetBeginCell(),CellDivSingle->GetCellDomainMin(),Dcellc,Posc,Velrhopc,Idpc,Codec,Pressc,Pore,S,Sdot,viscdt,Arc,Acec,Deltac,SpsTauc,SpsGradvelc,Omega,ShiftPosc,ShiftDetectc);
+  if(Psimple)JSphCpu::InteractionSimple_Forces(Np,Npb,NpbOk,CellDivSingle->GetNcells(),CellDivSingle->GetBeginCell(),CellDivSingle->GetCellDomainMin(),Dcellc,PsPosc,Velrhopc,Idpc,Codec,Pressc,Pore,s,Sdot,viscdt,Arc,Acec,Deltac,SpsTauc,SpsGradvelc,Omega,ShiftPosc,ShiftDetectc);
+  else JSphCpu::Interaction_Forces(Np,Npb,NpbOk,CellDivSingle->GetNcells(),CellDivSingle->GetBeginCell(),CellDivSingle->GetCellDomainMin(),Dcellc,Posc,Velrhopc,Idpc,Codec,Pressc,Pore,s,Sdot,viscdt,Arc,Acec,Deltac,SpsTauc,SpsGradvelc,Omega,ShiftPosc,ShiftDetectc);
 
   //-For 2-D simulations zero the 2nd component / Para simulaciones 2D anula siempre la 2º componente
   if(Simulate2D){

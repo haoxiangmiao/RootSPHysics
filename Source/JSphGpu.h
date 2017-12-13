@@ -96,8 +96,6 @@ protected:
   tfloat3 *AuxVel; 
   float *AuxRhop;
 
-  tsymatrix3f *AuxS;
-
   unsigned GpuParticlesSize;  ///<Numero de particulas para las cuales se reservo memoria en gpu. Number of particles for which GPU memory was allocated
   llong MemGpuParticles;      ///<Mermoria reservada para vectores de datos de particulas. Allocated GPU memory for arrays with particle data
   llong MemGpuFixed;          ///<Mermoria reservada en AllocGpuMemoryFixed. Allocated memory in AllocGpuMemoryFixed

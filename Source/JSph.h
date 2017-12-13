@@ -373,8 +373,9 @@ protected:
   void PrintSizeNp(unsigned np,llong size)const;
   void PrintHeadPart();
 
-  void ConfigSaveData(unsigned piece,unsigned pieces,std::string div);
-  void AddParticlesOut(unsigned nout,const unsigned *idp,const tdouble3* pos,const tfloat3 *vel,const float *rhop,const tsymatrix3f *s,unsigned noutrhop,unsigned noutmove);
+  void ConfigSaveData(unsigned piece, unsigned pieces, std::string div);
+  void AddParticlesOut(unsigned nout, const unsigned *idp, const tdouble3* pos, const tfloat3 *vel, const float *rhop, const tsymatrix3f *s, unsigned noutrhop, unsigned noutmove);
+  void AddParticlesOut(unsigned nout, const unsigned *idp, const tdouble3* pos, const tfloat3 *vel, const float *rhop, unsigned noutrhop, unsigned noutmove);
 
   tfloat3* GetPointerDataFloat3(unsigned n,const tdouble3* v)const;
   void SavePartData(unsigned npok,unsigned nout,const unsigned *idp,const tdouble3 *pos,const tfloat3 *vel,const float *rhop,unsigned ndom,const tdouble3 *vdom,const StInfoPartPlus *infoplus);
