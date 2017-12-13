@@ -65,6 +65,7 @@ protected:
   unsigned *Idp;
   tdouble3 *Pos;
   tfloat4 *VelRhop;
+  tsymatrix3f *S;
 
   void AllocMemory(unsigned count);
   template<typename T> T* SortParticles(const unsigned *vsort,unsigned count,T *v)const;
@@ -93,6 +94,7 @@ public:
   const unsigned* GetIdp(){ return(Idp); }
   const tdouble3* GetPos(){ return(Pos); }
   const tfloat4* GetVelRhop(){ return(VelRhop); }
+  const tsymatrix3f* GetS(){ return(S); }
 
   tdouble3 GetCasePosMin()const{ return(CasePosMin); }
   tdouble3 GetCasePosMax()const{ return(CasePosMax); }

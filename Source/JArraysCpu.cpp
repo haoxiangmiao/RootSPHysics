@@ -150,7 +150,8 @@ void JArraysCpuSize::SetArraySize(unsigned size){
 /// Requests allocating an array.
 //==============================================================================
 void* JArraysCpuSize::Reserve(){
-  if(CountUsed==Count||!ArraySize)RunException("Reserve",fun::PrintStr("There are no arrays available with %u bytes.",ElementSize));
+	printf("Flag2\n");
+  if(CountUsed==Count||!ArraySize)RunException("Reserve",fun::PrintStr("There are no arrays FLAG available with %u bytes.",ElementSize));
   CountUsed++;
   CountUsedMax=max(CountUsedMax,CountUsed);
   return(Pointers[CountUsed-1]);

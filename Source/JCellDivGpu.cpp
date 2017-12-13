@@ -311,7 +311,7 @@ void JCellDivGpu::SortDataArrays(const tsymatrix3f *a,tsymatrix3f *a2){
 /// and computes the number of excluded by pos, rhop or mov.
 /// The data components are already in the original order.
 //==============================================================================
-void JCellDivGpu::CheckParticlesOut(unsigned npout,const unsigned *idp,const tdouble3 *pos,const float *rhop,const word *code){
+void JCellDivGpu::CheckParticlesOut(unsigned npout,const unsigned *idp,const tdouble3 *pos,const float *rhop, const tsymatrix3f *s ,const word *code){
   unsigned nerr=0;
   for(unsigned p=0;p<npout;p++){
     word type=CODE_GetType(code[p]);

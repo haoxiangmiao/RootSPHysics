@@ -144,8 +144,9 @@ void JSphCpuSingle::ConfigDomain(){
   //-Copy particle values / Copia datos de particulas.
   ReserveBasicArraysCpu();
   memcpy(Posc,PartsLoaded->GetPos(),sizeof(tdouble3)*Np);
-  memcpy(Idpc,PartsLoaded->GetIdp(),sizeof(unsigned)*Np);
-  memcpy(Velrhopc,PartsLoaded->GetVelRhop(),sizeof(tfloat4)*Np);
+  memcpy(Idpc, PartsLoaded->GetIdp(), sizeof(unsigned)*Np);
+  memcpy(Velrhopc, PartsLoaded->GetVelRhop(), sizeof(tfloat4)*Np);
+  memcpy(S, PartsLoaded->GetS(), sizeof(tsymatrix3f)*Np);
 
   //-Calculate floating radius / Calcula radio de floatings.
   if(CaseNfloat && PeriActive!=0 && !PartBegin)CalcFloatingRadius(Np,Posc,Idpc);
@@ -274,7 +275,7 @@ void JSphCpuSingle::PeriodicDuplicatePos(unsigned pnew,unsigned pcopy,bool inver
 /// This kernel works for single-cpu & multi-cpu because it uses domposmin.
 //==============================================================================
 void JSphCpuSingle::PeriodicDuplicateVerlet(unsigned np,unsigned pini,tuint3 cellmax,tdouble3 perinc,const unsigned *listp
-  ,unsigned *idp,word *code,unsigned *dcell,tdouble3 *pos,tfloat4 *velrhop,tsymatrix3f *spstau,tfloat4 *velrhopm1)const
+	, unsigned *idp, word *code, unsigned *dcell, tdouble3 *pos, tfloat4 *velrhop, tsymatrix3f *s, tsymatrix3f *spstau, tfloat4 *velrhopm1, tsymatrix3f *sm1)const
 {
   const int n=int(np);
   #ifdef _WITHOMP
@@ -288,9 +289,11 @@ void JSphCpuSingle::PeriodicDuplicateVerlet(unsigned np,unsigned pini,tuint3 cel
     PeriodicDuplicatePos(pnew,pcopy,(rp>=0x80000000),perinc.x,perinc.y,perinc.z,cellmax,pos,dcell);
     //-Copy the rest of the values / Copia el resto de datos.
     idp[pnew]=idp[pcopy];
-    code[pnew]=CODE_SetPeriodic(code[pcopy]);
-    velrhop[pnew]=velrhop[pcopy];
-    velrhopm1[pnew]=velrhopm1[pcopy];
+	code[pnew] = CODE_SetPeriodic(code[pcopy]);
+	velrhop[pnew] = velrhop[pcopy];
+	velrhopm1[pnew] = velrhopm1[pcopy];
+	s[pnew] = s[pcopy];
+	sm1[pnew] = sm1[pcopy];
     if(spstau)spstau[pnew]=spstau[pcopy];
   }
 }
@@ -392,7 +395,7 @@ void JSphCpuSingle::RunPeriodic(){
             run=false;
             //-Crea nuevas particulas periodicas duplicando las particulas de la lista.
             //-Create new duplicate periodic particles in the list
-            if(TStep==STEP_Verlet)PeriodicDuplicateVerlet(count,Np,DomCells,perinc,listp,Idpc,Codec,Dcellc,Posc,Velrhopc,SpsTauc,VelrhopM1c);
+            if(TStep==STEP_Verlet)PeriodicDuplicateVerlet(count,Np,DomCells,perinc,listp,Idpc,Codec,Dcellc,Posc,Velrhopc,S,SpsTauc,VelrhopM1c,SM1);
             if(TStep==STEP_Symplectic){
               if((PosPrec || VelrhopPrec) && (!PosPrec || !VelrhopPrec))RunException(met,"Symplectic data is invalid.") ;
               PeriodicDuplicateSymplectic(count,Np,DomCells,perinc,listp,Idpc,Codec,Dcellc,Posc,Velrhopc,SpsTauc,PosPrec,VelrhopPrec);
@@ -417,30 +420,43 @@ void JSphCpuSingle::RunPeriodic(){
 /// Execute divide of particles in cells.
 //==============================================================================
 void JSphCpuSingle::RunCellDivide(bool updateperiodic){
+//	Log->Print(string("FlagDivide0"));
   const char met[]="RunCellDivide";
   //-Create new periodic particles & mark the old ones to be ignored / Crea nuevas particulas periodicas y marca las viejas para ignorarlas.
   if(updateperiodic && PeriActive)RunPeriodic();
 
   //-Initial Divide / Inicia Divide.
+//  Log->Print(string("FlagDivide1"));
   CellDivSingle->Divide(Npb,Np-Npb-NpbPer-NpfPer,NpbPer,NpfPer,BoundChanged,Dcellc,Codec,Idpc,Posc,Timers);
+//  Log->Print(string("FlagDivide2"));
 
   //-Order particle data / Ordena datos de particulas
   TmcStart(Timers,TMC_NlSortData);
+//  Log->Print(string("FlagDivide3"));
   CellDivSingle->SortArray(Idpc);
   CellDivSingle->SortArray(Codec);
   CellDivSingle->SortArray(Dcellc);
   CellDivSingle->SortArray(Posc);
   CellDivSingle->SortArray(Velrhopc);
-  if(TStep==STEP_Verlet){
-    CellDivSingle->SortArray(VelrhopM1c);
+//  Log->Print(string("FlagDivide3.5"));
+//  Log->Print(string("FlagDivide3.6"));
+  if (TStep == STEP_Verlet){
+	  CellDivSingle->SortArray(VelrhopM1c);
+	  CellDivSingle->SortArray(SM1);
   }
   else if(TStep==STEP_Symplectic && (PosPrec || VelrhopPrec)){//In reality, this is only necessary in divide for corrector, not in predictor??? / En realidad solo es necesario en el divide del corrector, no en el predictor???
-    if(!PosPrec || !VelrhopPrec)RunException(met,"Symplectic data is invalid.") ;
+    
+//  Log->Print(string("FlagDivide3.7"));
+  if(!PosPrec || !VelrhopPrec)RunException(met,"Symplectic data is invalid.") ;
     CellDivSingle->SortArray(PosPrec);
     CellDivSingle->SortArray(VelrhopPrec);
   }
-  if(TVisco==VISCO_LaminarSPS)CellDivSingle->SortArray(SpsTauc);
-
+//  Log->Print(string("FlagDivide3.8"));
+//  if (TVisco == VISCO_LaminarSPS)CellDivSingle->SortArray(SpsTauc);
+  CellDivSingle->SortArray(SpsTauc);
+//  Log->Print(string("FlagDivide3.9"));
+  CellDivSingle->SortArray(S);
+//  Log->Print(string("FlagDivide4"));
   //-Collect divide data / Recupera datos del divide.
   Np=CellDivSingle->GetNpFinal();
   Npb=CellDivSingle->GetNpbFinal();
@@ -453,17 +469,25 @@ void JSphCpuSingle::RunCellDivide(bool updateperiodic){
   //-Control of excluded particles (only fluid because if some bound is excluded ti generates an exception in Divide()).
   TmcStart(Timers,TMC_NlOutCheck);
   unsigned npfout=CellDivSingle->GetNpOut();
+
+//	Log->Print(string("FlagDivide5"));
   if(npfout){
+//	Log->Print(string("FlagDivide6"));
     unsigned* idp=ArraysCpu->ReserveUint();
     tdouble3* pos=ArraysCpu->ReserveDouble3();
     tfloat3* vel=ArraysCpu->ReserveFloat3();
-    float* rhop=ArraysCpu->ReserveFloat();
-    unsigned num=GetParticlesData(npfout,Np,true,false,idp,pos,vel,rhop,NULL);
-    AddParticlesOut(npfout,idp,pos,vel,rhop,CellDivSingle->GetNpfOutRhop(),CellDivSingle->GetNpfOutMove());
+	float* rhop = ArraysCpu->ReserveFloat();
+//	Log->Print(string("FlagDivide7"));
+	tsymatrix3f *s = ArraysCpu->ReserveSymatrix3f();
+	unsigned num = GetParticlesData(npfout, Np, true, false, idp, pos, vel, rhop, s, NULL);
+//	Log->Print(string("FlagDivide8"));
+	AddParticlesOut(npfout, idp, pos, vel, rhop, s, CellDivSingle->GetNpfOutRhop(), CellDivSingle->GetNpfOutMove());
     ArraysCpu->Free(idp);
     ArraysCpu->Free(pos);
-    ArraysCpu->Free(vel);
-    ArraysCpu->Free(rhop);
+	ArraysCpu->Free(vel);
+	ArraysCpu->Free(rhop);
+	ArraysCpu->Free(s);
+//	Log->Print(string("FlagDivide9"));
   }
   TmcStop(Timers,TMC_NlOutCheck);
   BoundChanged=false;
@@ -496,13 +520,16 @@ void JSphCpuSingle::GetInteractionCells(unsigned rcell
 //==============================================================================
 void JSphCpuSingle::Interaction_Forces(TpInter tinter){
   const char met[]="Interaction_Forces";
+
+//  Log->Printf("FlagInteraction1\n");
   PreInteraction_Forces(tinter);
   TmcStart(Timers,TMC_CfForces);
 
   //-Interaction of Fluid-Fluid/Bound & Bound-Fluid (forces and DEM) / Interaccion Fluid-Fluid/Bound & Bound-Fluid (forces and DEM).
-  float viscdt=0;
-  if(Psimple)JSphCpu::InteractionSimple_Forces(Np,Npb,NpbOk,CellDivSingle->GetNcells(),CellDivSingle->GetBeginCell(),CellDivSingle->GetCellDomainMin(),Dcellc,PsPosc,Velrhopc,Idpc,Codec,Pressc,Pore,S,viscdt,Arc,Acec,Deltac,SpsTauc,SpsGradvelc,ShiftPosc,ShiftDetectc);
-  else JSphCpu::Interaction_Forces(Np,Npb,NpbOk,CellDivSingle->GetNcells(),CellDivSingle->GetBeginCell(),CellDivSingle->GetCellDomainMin(),Dcellc,Posc,Velrhopc,Idpc,Codec,Pressc,Pore,S,viscdt,Arc,Acec,Deltac,SpsTauc,SpsGradvelc,ShiftPosc,ShiftDetectc);
+  float viscdt = 0;
+//  Log->Printf("FlagInteraction2\n");
+  if(Psimple)JSphCpu::InteractionSimple_Forces(Np,Npb,NpbOk,CellDivSingle->GetNcells(),CellDivSingle->GetBeginCell(),CellDivSingle->GetCellDomainMin(),Dcellc,PsPosc,Velrhopc,Idpc,Codec,Pressc,Pore,S,Sdot,viscdt,Arc,Acec,Deltac,SpsTauc,SpsGradvelc,Omega,ShiftPosc,ShiftDetectc);
+  else JSphCpu::Interaction_Forces(Np,Npb,NpbOk,CellDivSingle->GetNcells(),CellDivSingle->GetBeginCell(),CellDivSingle->GetCellDomainMin(),Dcellc,Posc,Velrhopc,Idpc,Codec,Pressc,Pore,S,Sdot,viscdt,Arc,Acec,Deltac,SpsTauc,SpsGradvelc,Omega,ShiftPosc,ShiftDetectc);
 
   //-For 2-D simulations zero the 2nd component / Para simulaciones 2D anula siempre la 2º componente
   if(Simulate2D){
@@ -521,6 +548,7 @@ void JSphCpuSingle::Interaction_Forces(TpInter tinter){
     #endif
     for(int p=ini;p<fin;p++)if(Deltac[p]!=FLT_MAX)Arc[p]+=Deltac[p];
   }
+//  Log->Printf("FlagInteraction3\n");
 
   //-Calculates maximum value of ViscDt.
   ViscDtMax=viscdt;
@@ -593,13 +621,17 @@ double JSphCpuSingle::ComputeAceMaxOmp(const bool checkcodenormal,unsigned np,co
 /// calculated in the interaction using Verlet.
 //==============================================================================
 double JSphCpuSingle::ComputeStep_Ver(){
+//  Log->Printf("FlagVerlet1\n");
   Interaction_Forces(INTER_Forces);    //-Interaction / Interaccion
+//  Log->Printf("FlagVerlet2\n");
   const double dt=DtVariable(true);    //-Calculate new dt / Calcula nuevo dt
   DemDtForce=dt;                       //(DEM)
   if(TShifting)RunShifting(dt);        //-Shifting
-  ComputeVerlet(dt);                   //-Update particles using Verlet / Actualiza particulas usando Verlet
+  ComputeVerlet(dt);
+//  Log->Printf("FlagVerlet3\n");                 //-Update particles using Verlet / Actualiza particulas usando Verlet
   if(CaseNfloat)RunFloating(dt,false); //-Control of floating bodies / Gestion de floating bodies
   PosInteraction_Forces();             //-Free memory used for interaction / Libera memoria de interaccion
+//  Log->Printf("FlagVerlet4\n");
   return(dt);
 }
 
@@ -807,11 +839,12 @@ void JSphCpuSingle::RunFloating(double dt,bool predictor){
 /// Inicia proceso de simulacion.
 /// Initial processing of simulation.
 //==============================================================================
-void JSphCpuSingle::Run(std::string appname,JCfgRun *cfg,JLog2 *log){
+void JSphCpuSingle::Run(std::string appname, JCfgRun *cfg, JLog2 *log){
   const char* met="Run";
   if(!cfg||!log)return;
   AppName=appname; Log=log;
 
+  Log->Printf("FlagMatthias\n");
   //-Configure timers / Configura timers
   //-------------------
   TmcCreation(Timers,cfg->SvTimers);
@@ -819,6 +852,7 @@ void JSphCpuSingle::Run(std::string appname,JCfgRun *cfg,JLog2 *log){
 
   //-Load parameters and values of input / Carga de parametros y datos de entrada
   //-----------------------------------------
+//  Log->Printf("Flag01\n");
   LoadConfig(cfg);
   LoadCaseParticles();
   ConfigConstants(Simulate2D);
@@ -827,6 +861,7 @@ void JSphCpuSingle::Run(std::string appname,JCfgRun *cfg,JLog2 *log){
 
   //-Initialisation of execution variables / Inicializacion de variables de ejecucion
   //-------------------------------------------
+//  Log->Printf("Flag02\n");
   InitRun();
   UpdateMaxValues();
   PrintAllocMemory(GetAllocMemoryCpu());
@@ -840,30 +875,41 @@ void JSphCpuSingle::Run(std::string appname,JCfgRun *cfg,JLog2 *log){
   bool partoutstop=false;
   TimerSim.Start();
   TimerPart.Start();
-  Log->Print(string("\n[Initialising simulation (")+RunCode+")  "+fun::GetDateTime()+"]");
+  Log->Print(string("\n[Initialising simulation (") + RunCode + ")  " + fun::GetDateTime() + "]");
+//  Log->Print(string("Flag1-Bis\n"));
   PrintHeadPart();
   while(TimeStep<TimeMax){
     if(ViscoTime)Visco=ViscoTime->GetVisco(float(TimeStep));
+//	Log->Print(string("Flag2\n"));
     double stepdt=ComputeStep();
+//	Log->Print(string("Flag3\n"));
     if(PartDtMin>stepdt)PartDtMin=stepdt; if(PartDtMax<stepdt)PartDtMax=stepdt;
-    if(CaseNmoving)RunMotion(stepdt);
-    RunCellDivide(true);
-    TimeStep+=stepdt;
+	if (CaseNmoving)RunMotion(stepdt);
+//	Log->Print(string("Flag4\n"));
+	RunCellDivide(true);
+	TimeStep += stepdt;
+//	Log->Print(string("Flag5\n"));
     partoutstop=(Np<NpMinimum || !Np);
-    if(TimeStep>=TimePartNext || partoutstop){
+	if (TimeStep >= TimePartNext || partoutstop){
+//		Log->Print(string("Flag6.1\n"));
       if(partoutstop){
         Log->Print("\n**** Particles OUT limit reached...\n");
         TimeMax=TimeStep;
-      }
-      SaveData();
+	  }
+//	  Log->Print(string("Flag6.2\n"));
+	  SaveData();
+//	  Log->Print(string("Flag6.3\n"));
       Part++;
       PartNstep=Nstep;
       TimeStepM1=TimeStep;
       TimePartNext=TimeOut->GetNextTime(TimeStep);
-      TimerPart.Start();
-    }
+	  TimerPart.Start();
+//	  Log->Print(string("Flag6.4\n"));
+	}
+//	Log->Print(string("Flag7\n"));
     UpdateMaxValues();
-    Nstep++;
+	Nstep++;
+//	Log->Print(string("Flag8\n"));
     //if(Nstep>=3)break;
   }
   TimerSim.Stop(); TimerTot.Stop();
@@ -886,13 +932,15 @@ void JSphCpuSingle::SaveData(){
   tdouble3 *pos=NULL;
   tfloat3 *vel=NULL;
   float *rhop=NULL;
+  tsymatrix3f *s = NULL;
   if(save){
     //-Assign memory and collect particle values / Asigna memoria y recupera datos de las particulas.
     idp=ArraysCpu->ReserveUint();
     pos=ArraysCpu->ReserveDouble3();
     vel=ArraysCpu->ReserveFloat3();
     rhop=ArraysCpu->ReserveFloat();
-    unsigned npnormal=GetParticlesData(Np,0,true,PeriActive!=0,idp,pos,vel,rhop,NULL);
+	s = ArraysCpu->ReserveSymatrix3f();
+    unsigned npnormal=GetParticlesData(Np,0,true,PeriActive!=0,idp,pos,vel,rhop,s,NULL);
     if(npnormal!=npsave)RunException("SaveData","The number of particles is invalid.");
   }
   //-Gather additional information / Reune informacion adicional.
@@ -918,6 +966,7 @@ void JSphCpuSingle::SaveData(){
   ArraysCpu->Free(pos);
   ArraysCpu->Free(vel);
   ArraysCpu->Free(rhop);
+  ArraysCpu->Free(s);
   TmcStop(Timers,TMC_SuSavePart);
 }
 

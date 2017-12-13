@@ -48,7 +48,7 @@ protected:
   unsigned PeriodicMakeList(unsigned n,unsigned pini,bool stable,unsigned nmax,tdouble3 perinc,const tdouble3 *pos,const word *code,unsigned *listp)const;
   void PeriodicDuplicatePos(unsigned pnew,unsigned pcopy,bool inverse,double dx,double dy,double dz,tuint3 cellmax,tdouble3 *pos,unsigned *dcell)const;
   void PeriodicDuplicateVerlet(unsigned n,unsigned pini,tuint3 cellmax,tdouble3 perinc,const unsigned *listp
-    ,unsigned *idp,word *code,unsigned *dcell,tdouble3 *pos,tfloat4 *velrhop,tsymatrix3f *spstau,tfloat4 *velrhopm1)const;
+	  , unsigned *idp, word *code, unsigned *dcell, tdouble3 *pos, tfloat4 *velrhop, tsymatrix3f *s, tsymatrix3f *spstau, tfloat4 *velrhopm1, tsymatrix3f *sm1)const;
   void PeriodicDuplicateSymplectic(unsigned n,unsigned pini,tuint3 cellmax,tdouble3 perinc,const unsigned *listp
     ,unsigned *idp,word *code,unsigned *dcell,tdouble3 *pos,tfloat4 *velrhop,tsymatrix3f *spstau,tdouble3 *pospre,tfloat4 *velrhoppre)const;
   void RunPeriodic();

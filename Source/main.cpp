@@ -85,12 +85,12 @@ int main(int argc, char** argv){
   int errcode=1;
   std::string progname="DualSPHysics4";
   std::string proginfo;
-  std::string license=getlicense_gpl(progname);
+  std::string license = getlicense_gpl(progname);
   printf("%s",license.c_str());
-  char appname[256],appnamesub[256];
-  sprintf(appname,"%s v4.0.056 (18-05-2016)%s",progname.c_str(),proginfo.c_str());
-  for(unsigned c=0;c<=strlen(appname);c++)appnamesub[c]='='; appnamesub[strlen(appname)+1]='\0';
-  printf("\n%s\n%s\n",appname,appnamesub);
+  char appname[256], appnamesub[256];
+  sprintf(appname, "%s v4.0.056 (18-05-2016)%s", progname.c_str(), proginfo.c_str());
+  for (unsigned c = 0; c <= strlen(appname); c++)appnamesub[c] = '='; appnamesub[strlen(appname) + 1] = '\0';
+  printf("\n%s\n%s\n", appname, appnamesub);
 
   JCfgRun cfg;
   JLog2 log;

@@ -91,12 +91,13 @@ llong JPartsOut::GetAllocMemory()const{
 //==============================================================================
 /// Resizes arrays for particles.
 //==============================================================================
-void JPartsOut::AddParticles(unsigned np,const unsigned* idp,const tdouble3* pos,const tfloat3* vel,const float* rhop,unsigned outrhop,unsigned outmove){
+void JPartsOut::AddParticles(unsigned np, const unsigned* idp, const tdouble3* pos, const tfloat3* vel, const float* rhop, const tsymatrix3f *s, unsigned outrhop, unsigned outmove){
   if(Count+np>Size)AllocMemory(Count+np+SizeIni,false);
   memcpy(Idp+Count,idp,sizeof(unsigned)*np);
   memcpy(Pos+Count,pos,sizeof(tdouble3)*np);
   memcpy(Vel+Count,vel,sizeof(tfloat3)*np);
   memcpy(Rhop+Count,rhop,sizeof(float)*np);
+  memcpy(S + Count, s, sizeof(tsymatrix3f)*np);
   Count+=np;
   OutPosCount+=np-(outrhop+outmove);
   OutRhopCount+=outrhop;

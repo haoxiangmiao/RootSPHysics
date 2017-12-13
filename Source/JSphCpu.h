@@ -101,12 +101,17 @@ protected:
 
   //-Variables for computing forces [INTER_Forces,INTER_ForcesCorr] / Vars. derivadas para computo de fuerzas [INTER_Forces,INTER_ForcesCorr]
   float *Pressc;     ///< Press[]=B*((Rhop/Rhop0)^gamma-1)
-  float *Pore; ///[ PorePressure variable - SPACE DATA
-  tsymatrix3f *S;
+  float *Pore;		///[ PorePressure variable - SPACE DATA
+  tsymatrix3f *S;	// Deviatoric Stress
+  tsymatrix3f *SM1;	// Verlet Deviatoric Stress
 
   //-Variables for Laminar+SPS viscosity.  
   tsymatrix3f *SpsTauc;       ///<SPS sub-particle stress tensor.
   tsymatrix3f *SpsGradvelc;   ///<Velocity gradients.
+
+  // Variables for Solid mechanics
+  tsymatrix3f *Sdot;	// Rate of change
+  tsymatrix3f *Omega; // Rotation tensor
 
   TimersCpu Timers;
 
@@ -144,7 +149,7 @@ protected:
   void PrintAllocMemory(llong mcpu)const;
 
   unsigned GetParticlesData(unsigned n,unsigned pini,bool cellorderdecode,bool onlynormal
-    ,unsigned *idp,tdouble3 *pos,tfloat3 *vel,float *rhop,word *code);
+	  , unsigned *idp, tdouble3 *pos, tfloat3 *vel, float *rhop, tsymatrix3f *s, word *code);
   void ConfigOmp(const JCfgRun *cfg);
 
   void ConfigRunMode(const JCfgRun *cfg,std::string preinfo="");
@@ -178,7 +183,7 @@ protected:
   template<bool psimple,TpKernel tker,TpFtMode ftmode,bool lamsps,TpDeltaSph tdelta,bool shift> void InteractionForcesFluid
     (unsigned n,unsigned pini,tint4 nc,int hdiv,unsigned cellfluid,float visco
     ,const unsigned *beginendcell,tint3 cellzero,const unsigned *dcell
-    ,const tsymatrix3f* tau,tsymatrix3f* gradvel
+	, const tsymatrix3f* tau, tsymatrix3f* gradvel, tsymatrix3f* omega
     ,const tdouble3 *pos,const tfloat3 *pspos,const tfloat4 *velrhop,const word *code,const unsigned *idp
 	, const float *press, const float *pore, const tsymatrix3f *S
     ,float &viscdt,float *ar,tfloat3 *ace,float *delta
@@ -195,32 +200,35 @@ protected:
     (unsigned np,unsigned npb,unsigned npbok
     ,tuint3 ncells,const unsigned *begincell,tuint3 cellmin,const unsigned *dcell
     ,const tdouble3 *pos,const tfloat3 *pspos,const tfloat4 *velrhop,const word *code,const unsigned *idp
-	, const float *press, const float *pore, const tsymatrix3f *s
+	, const float *press, const float *pore, const tsymatrix3f *s, tsymatrix3f *sdot
     ,float &viscdt,float* ar,tfloat3 *ace,float *delta
-    ,tsymatrix3f *spstau,tsymatrix3f *spsgradvel
+	, tsymatrix3f *spstau, tsymatrix3f *spsgradvel, tsymatrix3f* omega
     ,TpShifting tshifting,tfloat3 *shiftpos,float *shiftdetect)const;
 
   void Interaction_Forces(unsigned np,unsigned npb,unsigned npbok
     ,tuint3 ncells,const unsigned *begincell,tuint3 cellmin,const unsigned *dcell
     ,const tdouble3 *pos,const tfloat4 *velrhop,const unsigned *idp,const word *code
-	, const float *press, const float *pore, const tsymatrix3f *s
+	, const float *press, const float *pore, const tsymatrix3f *s, tsymatrix3f *sdot
     ,float &viscdt,float* ar,tfloat3 *ace,float *delta
-    ,tsymatrix3f *spstau,tsymatrix3f *spsgradvel
+	, tsymatrix3f *spstau, tsymatrix3f *spsgradvel, tsymatrix3f* omega
     ,tfloat3 *shiftpos,float *shiftdetect)const;
 
   void InteractionSimple_Forces(unsigned np,unsigned npb,unsigned npbok
     ,tuint3 ncells,const unsigned *begincell,tuint3 cellmin,const unsigned *dcell
     ,const tfloat3 *pspos,const tfloat4 *velrhop,const unsigned *idp,const word *code
-	, const float *press, const float *pore, const tsymatrix3f *s
+	, const float *press, const float *pore, const tsymatrix3f *s, tsymatrix3f *sdot
     ,float &viscdt,float* ar,tfloat3 *ace,float *delta
-    ,tsymatrix3f *spstau,tsymatrix3f *spsgradvel
+	, tsymatrix3f *spstau, tsymatrix3f *spsgradvel, tsymatrix3f* omega
     ,tfloat3 *shiftpos,float *shiftdetect)const;
 
 
   void ComputeSpsTau(unsigned n,unsigned pini,const tfloat4 *velrhop,const tsymatrix3f *gradvel,tsymatrix3f *tau)const;
 
+  void ComputeSdot(unsigned n, unsigned pini, tsymatrix3f *sdot, const tsymatrix3f *s, const tsymatrix3f *gradvel, tsymatrix3f *omega)const;
+
   void UpdatePos(tdouble3 pos0,double dx,double dy,double dz,bool outrhop,unsigned p,tdouble3 *pos,unsigned *cell,word *code)const;
-  template<bool shift> void ComputeVerletVarsFluid(const tfloat4 *velrhop1,const tfloat4 *velrhop2,double dt,double dt2,tdouble3 *pos,unsigned *cell,word *code,tfloat4 *velrhopnew)const;
+  template<bool shift> void ComputeVerletVarsFluid(const tfloat4 *velrhop1, const tfloat4 *velrhop2, double dt, double dt2,
+	  tdouble3 *pos, unsigned *cell, word *code, tfloat4 *velrhopnew, tsymatrix3f *s, tsymatrix3f *s2)const;
   void ComputeVelrhopBound(const tfloat4* velrhopold,double armul,tfloat4* velrhopnew)const;
 
   void ComputeVerlet(double dt);
