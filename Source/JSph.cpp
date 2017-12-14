@@ -1402,47 +1402,97 @@ void JSph::SavePartData(unsigned npok,unsigned nout,const unsigned *idp,const td
 /// Genera los ficheros de salida de datos.
 /// Generates data output files.
 //==============================================================================
-void JSph::SaveData(unsigned npok,const unsigned *idp,const tdouble3 *pos,const tfloat3 *vel,const float *rhop
-  ,unsigned ndom,const tdouble3 *vdom,const StInfoPartPlus *infoplus)
+void JSph::SaveData(unsigned npok, const unsigned *idp, const tdouble3 *pos, const tfloat3 *vel, const float *rhop, const tsymatrix3f *s
+	, unsigned ndom, const tdouble3 *vdom, const StInfoPartPlus *infoplus)
 {
-  const char met[]="SaveData";
-  string suffixpartx=fun::PrintStr("_%04d",Part);
+	const char met[] = "SaveData";
+	string suffixpartx = fun::PrintStr("_%04d", Part);
 
-  //-Contabiliza nuevas particulas excluidas.
-  //-Counts new excluded particles.
-  const unsigned noutpos=PartsOut->GetOutPosCount(),noutrhop=PartsOut->GetOutRhopCount(),noutmove=PartsOut->GetOutMoveCount();
-  const unsigned nout=noutpos+noutrhop+noutmove;
-  AddOutCount(noutpos,noutrhop,noutmove);
+	//-Contabiliza nuevas particulas excluidas.
+	//-Counts new excluded particles.
+	const unsigned noutpos = PartsOut->GetOutPosCount(), noutrhop = PartsOut->GetOutRhopCount(), noutmove = PartsOut->GetOutMoveCount();
+	const unsigned nout = noutpos + noutrhop + noutmove;
+	AddOutCount(noutpos, noutrhop, noutmove);
 
-  //-Graba ficheros con datos de particulas.
-  //-Stores data files of particles.
-  SavePartData(npok,nout,idp,pos,vel,rhop,ndom,vdom,infoplus);
-  
-  //-Reinicia limites de dt.
-  //-Reinitialises limits of dt.
-  PartDtMin=DBL_MAX; PartDtMax=-DBL_MAX;
+	//-Graba ficheros con datos de particulas.
+	//-Stores data files of particles.
+	SavePartData(npok, nout, idp, pos, vel, rhop, ndom, vdom, infoplus);
 
-  //-Calculo de tiempo.
-  //-Computation of time.
-  if(Part>PartIni||Nstep){
-    TimerPart.Stop();
-    double tpart=TimerPart.GetElapsedTimeD()/1000;
-    double tseg=tpart/(TimeStep-TimeStepM1);
-    TimerSim.Stop();
-    double tcalc=TimerSim.GetElapsedTimeD()/1000;
-    double tleft=(tcalc/(TimeStep-TimeStepIni))*(TimeMax-TimeStep);
-    Log->Printf("Part%s  %12.6f  %12d  %7d  %9.2f  %14s",suffixpartx.c_str(),TimeStep,(Nstep+1),Nstep-PartNstep,tseg,fun::GetDateTimeAfter(int(tleft)).c_str());
-  }
-  else Log->Printf("Part%s        %u particles successfully stored",suffixpartx.c_str(),npok);   
-  
-  //-Muestra info de particulas excluidas
-  //-Shows info of the excluded particles
-  if(nout){
-    PartOut+=nout;
-    Log->Printf("  Particles out: %u  (total: %u)",nout,PartOut);
-  }
+	//-Reinicia limites de dt.
+	//-Reinitialises limits of dt.
+	PartDtMin = DBL_MAX; PartDtMax = -DBL_MAX;
 
-  if(SvDomainVtk)SaveDomainVtk(ndom,vdom);
+	//-Calculo de tiempo.
+	//-Computation of time.
+	if (Part>PartIni || Nstep){
+		TimerPart.Stop();
+		double tpart = TimerPart.GetElapsedTimeD() / 1000;
+		double tseg = tpart / (TimeStep - TimeStepM1);
+		TimerSim.Stop();
+		double tcalc = TimerSim.GetElapsedTimeD() / 1000;
+		double tleft = (tcalc / (TimeStep - TimeStepIni))*(TimeMax - TimeStep);
+		Log->Printf("Part%s  %12.6f  %12d  %7d  %9.2f  %14s", suffixpartx.c_str(), TimeStep, (Nstep + 1), Nstep - PartNstep, tseg, fun::GetDateTimeAfter(int(tleft)).c_str());
+	}
+	else Log->Printf("Part%s        %u particles successfully stored", suffixpartx.c_str(), npok);
+
+	//  float maxVel = rhop[10];
+	float maxS = 0;
+	int numberPart = npok;
+	for (int p = 0; p < npok; p++) {
+		if (maxS < abs(s[p].xx))  maxS = abs(s[p].xx);
+	}
+	Log->Printf("S %12.6f - Npok %d\n", maxS, numberPart);
+
+	//-Muestra info de particulas excluidas
+	//-Shows info of the excluded particles
+	if (nout){
+		PartOut += nout;
+		Log->Printf("  Particles out: %u  (total: %u)", nout, PartOut);
+	}
+
+	if (SvDomainVtk)SaveDomainVtk(ndom, vdom);
+}
+void JSph::SaveData(unsigned npok, const unsigned *idp, const tdouble3 *pos, const tfloat3 *vel, const float *rhop
+	, unsigned ndom, const tdouble3 *vdom, const StInfoPartPlus *infoplus)
+{
+	const char met[] = "SaveData";
+	string suffixpartx = fun::PrintStr("_%04d", Part);
+
+	//-Contabiliza nuevas particulas excluidas.
+	//-Counts new excluded particles.
+	const unsigned noutpos = PartsOut->GetOutPosCount(), noutrhop = PartsOut->GetOutRhopCount(), noutmove = PartsOut->GetOutMoveCount();
+	const unsigned nout = noutpos + noutrhop + noutmove;
+	AddOutCount(noutpos, noutrhop, noutmove);
+
+	//-Graba ficheros con datos de particulas.
+	//-Stores data files of particles.
+	SavePartData(npok, nout, idp, pos, vel, rhop, ndom, vdom, infoplus);
+
+	//-Reinicia limites de dt.
+	//-Reinitialises limits of dt.
+	PartDtMin = DBL_MAX; PartDtMax = -DBL_MAX;
+
+	//-Calculo de tiempo.
+	//-Computation of time.
+	if (Part>PartIni || Nstep){
+		TimerPart.Stop();
+		double tpart = TimerPart.GetElapsedTimeD() / 1000;
+		double tseg = tpart / (TimeStep - TimeStepM1);
+		TimerSim.Stop();
+		double tcalc = TimerSim.GetElapsedTimeD() / 1000;
+		double tleft = (tcalc / (TimeStep - TimeStepIni))*(TimeMax - TimeStep);
+		Log->Printf("Part%s  %12.6f  %12d  %7d  %9.2f  %14s", suffixpartx.c_str(), TimeStep, (Nstep + 1), Nstep - PartNstep, tseg, fun::GetDateTimeAfter(int(tleft)).c_str());
+	}
+	else Log->Printf("Part%s        %u particles successfully stored", suffixpartx.c_str(), npok);
+
+	//-Muestra info de particulas excluidas
+	//-Shows info of the excluded particles
+	if (nout){
+		PartOut += nout;
+		Log->Printf("  Particles out: %u  (total: %u)", nout, PartOut);
+	}
+
+	if (SvDomainVtk)SaveDomainVtk(ndom, vdom);
 }
 
 //==============================================================================

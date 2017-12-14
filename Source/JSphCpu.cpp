@@ -221,7 +221,6 @@ void JSphCpu::ResizeCpuMemoryParticles(unsigned npnew){
 
   //-Resizes CPU memory allocation.
   const double mbparticle=(double(MemCpuParticles)/(1024*1024))/CpuParticlesSize; //-MB por particula.
-  Log->Printf("FlagNaught");
   Log->Printf("**JSphCpu: Requesting cpu memory for %u particles: %.1f MB.",npnew,mbparticle*npnew);
   ArraysCpu->SetArraySize(npnew);
   //-Reserve pointers.
@@ -360,7 +359,8 @@ unsigned JSphCpu::GetParticlesData(unsigned n,unsigned pini,bool cellorderdecode
   }
 
 	// Audacious GetParticleData(): high risk of error
-  if (s)for (unsigned p = 0; p<n; p++) s[p] = S[p + pini];
+//  if (s)for (unsigned p = 0; p<n; p++) s[p] = S[p + pini];
+  if (s)for (unsigned p = 0; p<n; p++) s[p] = SpsTauc[p + pini];
 
   //-Eliminate non-normal particles (periodic & others) / Elimina particulas no normales (periodicas y otras).
   if(onlynormal){
@@ -444,6 +444,7 @@ void JSphCpu::InitRun(){
   const char met[]="InitRun";
   WithFloating=(CaseNfloat>0);
 
+  // Qu'est-ce que cela fout la ???
   memset(S, 0, sizeof(tsymatrix3f)*Np);
 
   if (TStep == STEP_Verlet){
@@ -934,7 +935,8 @@ template<bool psimple,TpKernel tker,TpFtMode ftmode,bool lamsps,TpDeltaSph tdelt
     const tfloat3 psposp1=(psimple? pspos[p1]: TFloat3(0));
 	const tdouble3 posp1 = (psimple ? TDouble3(0) : pos[p1]);
 	const float pressp1 = press[p1];
-    const tsymatrix3f taup1=(lamsps? tau[p1]: gradvelp1);
+//	const tsymatrix3f taup1 = (lamsps ? tau[p1] : gradvelp1);
+	const tsymatrix3f taup1 = tau[p1];
 
 	const float porep1 = pore[p1];
 	const tsymatrix3f Sp1 = s[p1];
@@ -1108,7 +1110,7 @@ template<bool psimple,TpKernel tker,TpFtMode ftmode,bool lamsps,TpDeltaSph tdelt
       }
     }
   }
-  Log->Printf("S = %.8f\n", gradvel[100].xx);
+//  Log->Printf("S = %.8f\n", gradvel[100].xx);
 
   //-Keep max value in viscdt / Guarda en viscdt el valor maximo.
   for(int th=0;th<OmpThreads;th++)if(viscdt<viscth[th*STRIDE_OMP])viscdt=viscth[th*STRIDE_OMP];
@@ -1264,6 +1266,7 @@ void JSphCpu::ComputeSdot(unsigned n, unsigned pini, tsymatrix3f *sdot, const ts
 	for (int p = int(pini); p<pfin; p++){
 		// Cet appel est extremement curieux ! Ces matrices sont deja en arguments ! 
 		// Est-ce a voir avec la parallelisation ?
+		// + Sans doute un update du pointer en meme temps
 		const tsymatrix3f s = S[p];
 		const tsymatrix3f gradvel = SpsGradvelc[p];
 		const tsymatrix3f omega = Omega[p];
