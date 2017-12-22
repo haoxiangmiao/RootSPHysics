@@ -143,7 +143,8 @@ void JSphCpuSingle::ConfigDomain(){
 
   //-Copy particle values / Copia datos de particulas.
   ReserveBasicArraysCpu();
-  memcpy(Posc,PartsLoaded->GetPos(),sizeof(tdouble3)*Np);
+
+  memcpy(Posc, PartsLoaded->GetPos(), sizeof(tdouble3)*Np);
   memcpy(Idpc, PartsLoaded->GetIdp(), sizeof(unsigned)*Np);
   memcpy(Velrhopc, PartsLoaded->GetVelRhop(), sizeof(tfloat4)*Np);
   memcpy(S, PartsLoaded->GetS(), sizeof(tsymatrix3f)*Np);
@@ -171,11 +172,12 @@ void JSphCpuSingle::ConfigDomain(){
   CellDivSingle->DefineDomain(DomCellCode,DomCelIni,DomCelFin,DomPosMin,DomPosMax);
   ConfigCellDiv((JCellDivCpu*)CellDivSingle);
 
-  ConfigSaveData(0,1,"");
+  ConfigSaveData(0, 1, "");
 
   //-Reorder particles for cell / Reordena particulas por celda.
-  BoundChanged=true;
+  BoundChanged = true;
   RunCellDivide(true);
+
 }
 
 //==============================================================================
@@ -420,24 +422,20 @@ void JSphCpuSingle::RunPeriodic(){
 /// Execute divide of particles in cells.
 //==============================================================================
 void JSphCpuSingle::RunCellDivide(bool updateperiodic){
-//	Log->Print(string("DivideInside"));
   const char met[]="RunCellDivide";
   //-Create new periodic particles & mark the old ones to be ignored / Crea nuevas particulas periodicas y marca las viejas para ignorarlas.
   if(updateperiodic && PeriActive)RunPeriodic();
 
   //-Initial Divide / Inicia Divide.
   CellDivSingle->Divide(Npb, Np - Npb - NpbPer - NpfPer, NpbPer, NpfPer, BoundChanged, Dcellc, Codec, Idpc, Posc, Timers);
- // Log->Print(string("Divide1"));
 
   //-Order particle data / Ordena datos de particulas
   TmcStart(Timers, TMC_NlSortData);
-//  Log->Print(string("Divide2"));
   CellDivSingle->SortArray(Idpc);
   CellDivSingle->SortArray(Codec);
   CellDivSingle->SortArray(Dcellc);
   CellDivSingle->SortArray(Posc);
   CellDivSingle->SortArray(Velrhopc);
-//  Log->Print(string("Divide3"));
   if (TStep == STEP_Verlet){
 	  CellDivSingle->SortArray(VelrhopM1c);
 	  CellDivSingle->SortArray(SM1);
@@ -448,12 +446,10 @@ void JSphCpuSingle::RunCellDivide(bool updateperiodic){
     CellDivSingle->SortArray(PosPrec);
     CellDivSingle->SortArray(VelrhopPrec);
   }
-//	  Log->Print(string("Divide4"));
 //  if (TVisco == VISCO_LaminarSPS)CellDivSingle->SortArray(SpsTauc);
 	  CellDivSingle->SortArray(SpsTauc);
-//	  Log->Print(string("Divide5"));
 	  CellDivSingle->SortArray(S);
-//	  Log->Print(string("Divide6"));
+
   //-Collect divide data / Recupera datos del divide.
   Np=CellDivSingle->GetNpFinal();
   Npb=CellDivSingle->GetNpbFinal();
@@ -466,7 +462,6 @@ void JSphCpuSingle::RunCellDivide(bool updateperiodic){
   //-Control of excluded particles (only fluid because if some bound is excluded ti generates an exception in Divide()).
   TmcStart(Timers,TMC_NlOutCheck);
   unsigned npfout = CellDivSingle->GetNpOut();
-//Log->Print(string("Divide7"));
 
   if(npfout){
     unsigned* idp=ArraysCpu->ReserveUint();
@@ -474,9 +469,11 @@ void JSphCpuSingle::RunCellDivide(bool updateperiodic){
     tfloat3* vel=ArraysCpu->ReserveFloat3();
 	float* rhop = ArraysCpu->ReserveFloat();
 	tsymatrix3f *s = ArraysCpu->ReserveSymatrix3f();
+
 	unsigned num = GetParticlesData(npfout, Np, true, false, idp, pos, vel, rhop, s, NULL);
+
 	AddParticlesOut(npfout, idp, pos, vel, rhop, s, CellDivSingle->GetNpfOutRhop(), CellDivSingle->GetNpfOutMove());
-	Log->Print(string("Divide-AfterAddParticleOut"));
+
     ArraysCpu->Free(idp);
     ArraysCpu->Free(pos);
 	ArraysCpu->Free(vel);
@@ -485,7 +482,6 @@ void JSphCpuSingle::RunCellDivide(bool updateperiodic){
   }
   TmcStop(Timers,TMC_NlOutCheck);
   BoundChanged = false;
-  Log->Print(string("DivideClosure"));
 }
 
 //------------------------------------------------------------------------------
@@ -516,13 +512,11 @@ void JSphCpuSingle::GetInteractionCells(unsigned rcell
 void JSphCpuSingle::Interaction_Forces(TpInter tinter){
   const char met[]="Interaction_Forces";
 
-//  Log->Printf("FlagInteraction1\n");
   PreInteraction_Forces(tinter);
   TmcStart(Timers,TMC_CfForces);
 
   //-Interaction of Fluid-Fluid/Bound & Bound-Fluid (forces and DEM) / Interaccion Fluid-Fluid/Bound & Bound-Fluid (forces and DEM).
   float viscdt = 0;
-//  Log->Printf("FlagInteraction2\n");
   if(Psimple)JSphCpu::InteractionSimple_Forces(Np,Npb,NpbOk,CellDivSingle->GetNcells(),CellDivSingle->GetBeginCell(),CellDivSingle->GetCellDomainMin(),Dcellc,PsPosc,Velrhopc,Idpc,Codec,Pressc,Pore,S,Sdot,viscdt,Arc,Acec,Deltac,SpsTauc,SpsGradvelc,Omega,ShiftPosc,ShiftDetectc);
   else JSphCpu::Interaction_Forces(Np,Npb,NpbOk,CellDivSingle->GetNcells(),CellDivSingle->GetBeginCell(),CellDivSingle->GetCellDomainMin(),Dcellc,Posc,Velrhopc,Idpc,Codec,Pressc,Pore,S,Sdot,viscdt,Arc,Acec,Deltac,SpsTauc,SpsGradvelc,Omega,ShiftPosc,ShiftDetectc);
 
@@ -543,7 +537,6 @@ void JSphCpuSingle::Interaction_Forces(TpInter tinter){
     #endif
     for(int p=ini;p<fin;p++)if(Deltac[p]!=FLT_MAX)Arc[p]+=Deltac[p];
   }
-//  Log->Printf("FlagInteraction3\n");
 
   //-Calculates maximum value of ViscDt.
   ViscDtMax=viscdt;
@@ -616,17 +609,13 @@ double JSphCpuSingle::ComputeAceMaxOmp(const bool checkcodenormal,unsigned np,co
 /// calculated in the interaction using Verlet.
 //==============================================================================
 double JSphCpuSingle::ComputeStep_Ver(){
-//  Log->Printf("FlagVerlet1\n");
   Interaction_Forces(INTER_Forces);    //-Interaction / Interaccion
-//  Log->Printf("FlagVerlet2\n");
   const double dt=DtVariable(true);    //-Calculate new dt / Calcula nuevo dt
   DemDtForce=dt;                       //(DEM)
   if(TShifting)RunShifting(dt);        //-Shifting
-  ComputeVerlet(dt);
-//  Log->Printf("FlagVerlet3\n");                 //-Update particles using Verlet / Actualiza particulas usando Verlet
+  ComputeVerlet(dt);				   //-Update particles using Verlet / Actualiza particulas usando Verlet
   if(CaseNfloat)RunFloating(dt,false); //-Control of floating bodies / Gestion de floating bodies
   PosInteraction_Forces();             //-Free memory used for interaction / Libera memoria de interaccion
-//  Log->Printf("FlagVerlet4\n");
   return(dt);
 }
 
@@ -847,19 +836,14 @@ void JSphCpuSingle::Run(std::string appname, JCfgRun *cfg, JLog2 *log){
 
   //-Load parameters and values of input / Carga de parametros y datos de entrada
   //-----------------------------------------
-//  Log->Printf("Flag01\n");
-  Log->Printf("Flag-2\n");
   LoadConfig(cfg);
   LoadCaseParticles();
   ConfigConstants(Simulate2D);
-  Log->Printf("Flag-1\n");
   ConfigDomain();
   ConfigRunMode(cfg);
 
   //-Initialisation of execution variables / Inicializacion de variables de ejecucion
   //-------------------------------------------
-//  Log->Printf("Flag02\n");
-  Log->Printf("Flag0\n");
   InitRun();
   UpdateMaxValues();
   PrintAllocMemory(GetAllocMemoryCpu());
@@ -874,52 +858,36 @@ void JSphCpuSingle::Run(std::string appname, JCfgRun *cfg, JLog2 *log){
   TimerSim.Start();
   TimerPart.Start();
   Log->Print(string("\n[Initialising simulation (") + RunCode + ")  " + fun::GetDateTime() + "]");
-//  Log->Print(string("Flag1-Bis\n"));
   PrintHeadPart();
   while (TimeStep<TimeMax){
 
-//	Log->Printf("Flag1.1\n");
     if(ViscoTime)Visco=ViscoTime->GetVisco(float(TimeStep));
-//	Log->Print(string("Flag1.2\n"));
     double stepdt=ComputeStep();
-//	Log->Print(string("Flag1.3\n"));
 	if (PartDtMin>stepdt)PartDtMin = stepdt; if (PartDtMax<stepdt)PartDtMax = stepdt;
-//	Log->Print(string("Flag1.4\n"));
 	if (CaseNmoving)RunMotion(stepdt);
-//	Log->Print(string("Flag1.5\n"));
-//	Log->Print(string("BeforeRunCellDivide\n"));
 	RunCellDivide(true);
-	Log->Print(string("AfterRunCellDivide\n"));
-//	Log->Print(string("Flag1.6\n"));
+
 	TimeStep += stepdt;
-//	Log->Print(string("Flag5\n"));
 	partoutstop = (Np<NpMinimum || !Np);
-//	Log->Print(string("Flag1.7\n"));
 	if (TimeStep >= TimePartNext || partoutstop){
-//		Log->Print(string("Flag6.1\n"));
       if(partoutstop){
         Log->Print("\n**** Particles OUT limit reached...\n");
         TimeMax=TimeStep;
 	  }
-//	  Log->Print(string("Flag6.2\n"));
 
-//	  Log->Printf("FlagSaveBefore\n");
 	  SaveData();
-//	  Log->Printf("FlagSaveAfter\n");
-//	  Log->Print(string("Flag6.3\n"));
       Part++;
       PartNstep=Nstep;
       TimeStepM1=TimeStep;
       TimePartNext=TimeOut->GetNextTime(TimeStep);
 	  TimerPart.Start();
-//	  Log->Print(string("Flag6.4\n"));
 	}
-//	Log->Print(string("Flag7\n"));
+
     UpdateMaxValues();
 	Nstep++;
-//	Log->Print(string("Flag8\n"));
+
     //if(Nstep>=3)break;
-	Log->Printf("FlagEndLoop\n");
+//	Log->Printf("FlagEndLoop - %1.8f\n", float(TimeStep));
   }
   TimerSim.Stop(); TimerTot.Stop();
 
@@ -942,7 +910,6 @@ void JSphCpuSingle::SaveData(){
   tfloat3 *vel=NULL;
   float *rhop=NULL;
   tsymatrix3f *s = NULL;
-  Log->Printf("FlagSaveInside\n");
   if(save){
     //-Assign memory and collect particle values / Asigna memoria y recupera datos de las particulas.
     idp=ArraysCpu->ReserveUint();
@@ -972,7 +939,6 @@ void JSphCpuSingle::SaveData(){
   const tdouble3 vdom[2]={OrderDecode(CellDivSingle->GetDomainLimits(true)),OrderDecode(CellDivSingle->GetDomainLimits(false))};
   JSph::SaveData(npsave,idp,pos,vel,rhop,s,1,vdom,&infoplus);
   //-Libera memoria para datos de particulas.
-//  Log->Printf("FlagSaveClosure\n");
   ArraysCpu->Free(idp);
   ArraysCpu->Free(pos);
   ArraysCpu->Free(vel);

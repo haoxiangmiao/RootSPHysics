@@ -377,9 +377,10 @@ protected:
   void AddParticlesOut(unsigned nout, const unsigned *idp, const tdouble3* pos, const tfloat3 *vel, const float *rhop, const tsymatrix3f *s, unsigned noutrhop, unsigned noutmove);
   void AddParticlesOut(unsigned nout, const unsigned *idp, const tdouble3* pos, const tfloat3 *vel, const float *rhop, unsigned noutrhop, unsigned noutmove);
 
-  tfloat3* GetPointerDataFloat3(unsigned n,const tdouble3* v)const;
-  void SavePartData(unsigned npok,unsigned nout,const unsigned *idp,const tdouble3 *pos,const tfloat3 *vel,const float *rhop,unsigned ndom,const tdouble3 *vdom,const StInfoPartPlus *infoplus);
-  void SaveData(unsigned npok, const unsigned *idp, const tdouble3 *pos, const tfloat3 *vel, const float *rhop, const tsymatrix3f *s, unsigned ndom, const tdouble3 *vdom, const StInfoPartPlus *infoplus);
+  tfloat3* GetPointerDataFloat3(unsigned n, const tdouble3* v)const;
+  void SavePartData(unsigned npok, unsigned nout, const unsigned *idp, const tdouble3 *pos, const tfloat3 *vel, const float *rhop, unsigned ndom, const tdouble3 *vdom, const StInfoPartPlus *infoplus);
+  void SavePartData(unsigned npok, unsigned nout, const unsigned *idp, const tdouble3 *pos, const tfloat3 *vel, const float *rhop, const tsymatrix3f *gradvel, unsigned ndom, const tdouble3 *vdom, const StInfoPartPlus *infoplus);
+  void SaveData(unsigned npok, const unsigned *idp, const tdouble3 *pos, const tfloat3 *vel, const float *rhop, const tsymatrix3f *gradvel, unsigned ndom, const tdouble3 *vdom, const StInfoPartPlus *infoplus);
   void SaveData(unsigned npok, const unsigned *idp, const tdouble3 *pos, const tfloat3 *vel, const float *rhop, unsigned ndom, const tdouble3 *vdom, const StInfoPartPlus *infoplus);
   void SaveDomainVtk(unsigned ndom, const tdouble3 *vdom)const;
   void SaveMapCellsVtk(float scell)const;

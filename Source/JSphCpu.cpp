@@ -163,7 +163,6 @@ void JSphCpu::AllocCpuMemoryParticles(unsigned np,float over){
   ArraysCpu->AddArrayCount(JArraysCpu::SIZE_24B, 1); ///<-Sdot
   ArraysCpu->AddArrayCount(JArraysCpu::SIZE_24B, 1); ///<-Omega
   ArraysCpu->AddArrayCount(JArraysCpu::SIZE_24B, 1); ///<-Gradvel
- // ArraysCpu->AddArrayCount(JArraysCpu::SIZE_24B, 1); ///<-ArrayAdditionnel
 
   ArraysCpu->AddArrayCount(JArraysCpu::SIZE_24B,2); ///<-pos
   if(Psimple)ArraysCpu->AddArrayCount(JArraysCpu::SIZE_12B,1); ///<-pspos
@@ -359,8 +358,8 @@ unsigned JSphCpu::GetParticlesData(unsigned n,unsigned pini,bool cellorderdecode
   }
 
 	// Audacious GetParticleData(): high risk of error
-//  if (s)for (unsigned p = 0; p<n; p++) s[p] = S[p + pini];
-  if (s)for (unsigned p = 0; p<n; p++) s[p] = SpsTauc[p + pini];
+  if (s)for (unsigned p = 0; p<n; p++) s[p] = S[p + pini];
+  //  if (s)for (unsigned p = 0; p<n; p++) s[p] = SpsTauc[p + pini];
 
   //-Eliminate non-normal particles (periodic & others) / Elimina particulas no normales (periodicas y otras).
   if(onlynormal){
@@ -1039,6 +1038,17 @@ template<bool psimple,TpKernel tker,TpFtMode ftmode,bool lamsps,TpDeltaSph tdelt
                   const float robar=(rhopp1+velrhop[p2].w)*0.5f;
                   const float pi_visc=(-visco*cbar*amubar/robar)*massp2*ftmassp1;
                   acep1.x-=pi_visc*frx; acep1.y-=pi_visc*fry; acep1.z-=pi_visc*frz;
+
+				  if (!ftp1){//-When p1 is a fluid particle / Cuando p1 es fluido. 
+					  const float volp2 = -massp2 / velrhop[p2].w;
+					  float dv = dvx*volp2; gradvelp1.xx += dv*frx; gradvelp1.xy += dv*fry; gradvelp1.xz += dv*frz;
+					  omegap1.xy += dv*fry; omegap1.xz += dv*frz;
+					  dv = dvy*volp2; gradvelp1.xy += dv*frx; gradvelp1.yy += dv*fry; gradvelp1.yz += dv*frz;
+					  omegap1.xy -= dv*frx; omegap1.yz += dv*frz;
+					  dv = dvz*volp2; gradvelp1.xz += dv*frx; gradvelp1.yz += dv*fry; gradvelp1.zz += dv*frz;
+					  omegap1.xz -= dv*frx; omegap1.yz -= dv*fry;
+
+				  }
                 }
               }
               else{//-Laminar+SPS viscosity 
@@ -1110,7 +1120,14 @@ template<bool psimple,TpKernel tker,TpFtMode ftmode,bool lamsps,TpDeltaSph tdelt
       }
     }
   }
-//  Log->Printf("S = %.8f\n", gradvel[100].xx);
+
+/*float maxGradVel = 0;
+  float maxOmega = 0;
+  for (int p1 = int(pinit); p1<pfin; p1++) {
+	  if (maxGradVel < abs(gradvelp1.xx))  maxGradVel = abs(gradvelp1.xx);
+	  if (maxOmega < abs(omegap1.xy))  maxOmega = abs(omegap1.xy);
+  }
+  Log->Printf("GV - %12.10f, Om - %12.10f, Npok %d\n", maxGradVel, maxOmega, n);*/
 
   //-Keep max value in viscdt / Guarda en viscdt el valor maximo.
   for(int th=0;th<OmpThreads;th++)if(viscdt<viscth[th*STRIDE_OMP])viscdt=viscth[th*STRIDE_OMP];
@@ -1271,7 +1288,9 @@ void JSphCpu::ComputeSdot(unsigned n, unsigned pini, tsymatrix3f *sdot, const ts
 		const tsymatrix3f gradvel = SpsGradvelc[p];
 		const tsymatrix3f omega = Omega[p];
 
-		const float Mu = 4.27f*1000000.0f; // Mu = 4.27.10^6 Pa
+//		const float Mu = 4.27f*1000000.0f; // Mu = 4.27.10^6 Pa
+//		const float Mu = 4.27f*1000.0f; // Mu = 4.27.10^6 Pa
+		const float Mu = 0.0f; //
 		const tsymatrix3f E = { 
 			2.0f / 3.0f * gradvel.xx - 1.0f / 3.0f * gradvel.yy - 1.0f / 3.0f * gradvel.zz,
 			gradvel.xy,
@@ -1287,6 +1306,18 @@ void JSphCpu::ComputeSdot(unsigned n, unsigned pini, tsymatrix3f *sdot, const ts
 		sdot[p].yz = 2.0f*Mu*E.yz + (s.zz - s.yy)*omega.yz - s.xz*omega.xy - s.xy*omega.xz;
 		sdot[p].yy = 2.0f*Mu*E.zz - 2.0f*s.xz*omega.xz - 2.0f*s.yz*omega.yz;
 	}
+	//  float maxVel = rhop[10];
+/*	float maxGradVel = 0;
+	float maxOmega = 0;
+	float maxSdot = 0;
+	float maxS = 0;
+	for (int p = int(pini); p<pfin; p++) {
+		if (maxGradVel < abs(SpsGradvelc[p].xx))  maxGradVel = abs(SpsGradvelc[p].xx);
+		if (maxOmega < abs(Omega[p].xy))  maxOmega = abs(Omega[p].xy);
+		if (maxS < abs(sdot[p].xx))  maxSdot = abs(sdot[p].xx);
+		if (maxS < abs(S[p].xx))  maxS = abs(S[p].xx);
+	}
+	Log->Printf("GV - %12.10f, Om - %12.10f, Sdot - %12.10f, S %12.10f - Npok %d\n", maxGradVel, maxOmega, maxSdot, maxS, n);*/
 }
 
 
@@ -1882,11 +1913,12 @@ template<bool shift> void JSphCpu::ComputeVerletVarsFluid(const tfloat4 *velrhop
       velrhopnew[p]=velrhop1[p];
       velrhopnew[p].w=(rhopnew<RhopZero? RhopZero: rhopnew); //-Avoid fluid particles being absorved by floating ones / Evita q las floating absorvan a las fluidas.
     }
-	//Log->Print(string("DT205 = %.3f\n", rhopnew));
-	//Log->Printf("DT205 = %.3f\n", rhopnew);
   }
-//  Log->Printf("DT205 = %.9f\n", dt205);
-//  Log->Printf("S = %.8f\n", Stemp);
+/*  float maxS = 0;
+  for (int p = int(pini); p<pfin; p++) {
+	  if (maxS < abs(s[p].xx))  maxS = abs(s[p].xx);
+  }
+  Log->Printf("GV - %12.10f, Om - %12.10f, Sdot - %12.10f, S %12.10f - Npok %d\n", maxGradVel, maxOmega, maxSdot, maxS, n);*/
 }
 
 //==============================================================================

@@ -29,7 +29,7 @@ using namespace std;
 JPartsOut::JPartsOut(unsigned sizeini){
   ClassName="JPartsOut";
   SizeIni=sizeini;
-  Idp=NULL; Pos=NULL; Vel=NULL; Rhop=NULL;
+  Idp = NULL; Pos = NULL; Vel = NULL; Rhop = NULL; S = NULL;
   Reset();
 }
 
@@ -56,8 +56,9 @@ void JPartsOut::AllocMemory(unsigned size,bool reset){
     Count=0;
     delete[] Idp;  Idp=NULL;
     delete[] Pos;  Pos=NULL;
-    delete[] Vel;  Vel=NULL;
-    delete[] Rhop; Rhop=NULL;
+	delete[] Vel;  Vel = NULL;
+	delete[] Rhop; Rhop = NULL;
+	delete[] S; S = NULL;
   }
   Size=(!Size && size<SizeIni? SizeIni: size);
   Count=min(Count,Size);
@@ -65,8 +66,9 @@ void JPartsOut::AllocMemory(unsigned size,bool reset){
     try{
       Idp=fun::ResizeAlloc(Idp,Count,Size);
       Pos=fun::ResizeAlloc(Pos,Count,Size);
-      Vel=fun::ResizeAlloc(Vel,Count,Size);
-      Rhop=fun::ResizeAlloc(Rhop,Count,Size);
+	  Vel = fun::ResizeAlloc(Vel, Count, Size);
+	  Rhop = fun::ResizeAlloc(Rhop, Count, Size);
+	  S = fun::ResizeAlloc(S, Count, Size);
     }
     catch(const std::bad_alloc){
       RunException("AllocMemory","Could not allocate the requested memory.");
@@ -83,8 +85,9 @@ llong JPartsOut::GetAllocMemory()const{
   //Allocated in AllocMemory()
   if(Idp)s+=sizeof(unsigned)*Size;
   if(Pos)s+=sizeof(tdouble3)*Size;
-  if(Vel)s+=sizeof(tfloat3)*Size;
-  if(Rhop)s+=sizeof(float)*Size;
+  if (Vel)s += sizeof(tfloat3)*Size;
+  if (Rhop)s += sizeof(float)*Size;
+  if (S)s += sizeof(float)*Size;
   return(s);
 }
 
