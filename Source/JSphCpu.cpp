@@ -1042,11 +1042,11 @@ template<bool psimple,TpKernel tker,TpFtMode ftmode,bool lamsps,TpDeltaSph tdelt
 				  if (!ftp1){//-When p1 is a fluid particle / Cuando p1 es fluido. 
 					  const float volp2 = -massp2 / velrhop[p2].w;
 					  float dv = dvx*volp2; gradvelp1.xx += dv*frx; gradvelp1.xy += dv*fry; gradvelp1.xz += dv*frz;
-					  omegap1.xy += dv*fry; omegap1.xz += dv*frz;
-					  dv = dvy*volp2; gradvelp1.xy += dv*frx; gradvelp1.yy += dv*fry; gradvelp1.yz += dv*frz;
-					  omegap1.xy -= dv*frx; omegap1.yz += dv*frz;
-					  dv = dvz*volp2; gradvelp1.xz += dv*frx; gradvelp1.yz += dv*fry; gradvelp1.zz += dv*frz;
-					  omegap1.xz -= dv*frx; omegap1.yz -= dv*fry;
+											omegap1.xy += dv*fry; omegap1.xz += dv*frz;
+							dv = dvy*volp2; gradvelp1.xy += dv*frx; gradvelp1.yy += dv*fry; gradvelp1.yz += dv*frz;
+											omegap1.xy -= dv*frx; omegap1.yz += dv*frz;
+							dv = dvz*volp2; gradvelp1.xz += dv*frx; gradvelp1.yz += dv*fry; gradvelp1.zz += dv*frz;
+											omegap1.xz -= dv*frx; omegap1.yz -= dv*fry;
 
 				  }
                 }
@@ -1285,12 +1285,13 @@ void JSphCpu::ComputeSdot(unsigned n, unsigned pini, tsymatrix3f *sdot, const ts
 		// Est-ce a voir avec la parallelisation ?
 		// + Sans doute un update du pointer en meme temps
 		const tsymatrix3f s = S[p];
-		const tsymatrix3f gradvel = SpsGradvelc[p];
+		//		const tsymatrix3f gradvel = SpsGradvelc[p];
+		const tsymatrix3f gradvel = {0, 0, 0, 0, 0, 0};
 		const tsymatrix3f omega = Omega[p];
 
-//		const float Mu = 4.27f*1000000.0f; // Mu = 4.27.10^6 Pa
-//		const float Mu = 4.27f*1000.0f; // Mu = 4.27.10^6 Pa
-		const float Mu = 0.0f; //
+		const float Mu = 4.27f*1000000.0f; // Mu = 4.27.10^6 Pa
+//		const float Mu = 4.27f*1000.0f; // Mu = 4.27.10^3 Pa
+//		const float Mu = 0.0f; //
 		const tsymatrix3f E = { 
 			2.0f / 3.0f * gradvel.xx - 1.0f / 3.0f * gradvel.yy - 1.0f / 3.0f * gradvel.zz,
 			gradvel.xy,
@@ -1299,12 +1300,19 @@ void JSphCpu::ComputeSdot(unsigned n, unsigned pini, tsymatrix3f *sdot, const ts
 			gradvel.yz,
 			2.0f / 3.0f * gradvel.zz - 1.0f / 3.0f * gradvel.yy - 1.0f / 3.0f * gradvel.xx };
 
-		sdot[p].xx = 2.0f*Mu*E.xx + 2.0f*s.xy*omega.xy + 2.0f*s.xz*omega.xz;
+/*		sdot[p].xx = 2.0f*Mu*E.xx + 2.0f*s.xy*omega.xy + 2.0f*s.xz*omega.xz;
 		sdot[p].xy = 2.0f*Mu*E.xy + (s.yy - s.xx)*omega.xy + s.xz*omega.yz + s.yz*omega.xz;
 		sdot[p].xz = 2.0f*Mu*E.xz + (s.zz - s.xx)*omega.xz - s.xy*omega.yz + s.yz*omega.xy;
 		sdot[p].yy = 2.0f*Mu*E.yy - 2.0f*s.xy*omega.xy + 2.0f*s.yz*omega.yz;
 		sdot[p].yz = 2.0f*Mu*E.yz + (s.zz - s.yy)*omega.yz - s.xz*omega.xy - s.xy*omega.xz;
-		sdot[p].yy = 2.0f*Mu*E.zz - 2.0f*s.xz*omega.xz - 2.0f*s.yz*omega.yz;
+		sdot[p].yy = 2.0f*Mu*E.zz - 2.0f*s.xz*omega.xz - 2.0f*s.yz*omega.yz;*/
+
+		sdot[p].xx = 2.0f*Mu*E.xx;
+		sdot[p].xy = 2.0f*Mu*E.xy;
+		sdot[p].xz = 2.0f*Mu*E.xz;
+		sdot[p].yy = 2.0f*Mu*E.yy;
+		sdot[p].yz = 2.0f*Mu*E.yz;
+		sdot[p].yy = 2.0f*Mu*E.zz;
 	}
 	//  float maxVel = rhop[10];
 /*	float maxGradVel = 0;

@@ -1527,7 +1527,7 @@ void JSph::SaveData(unsigned npok, const unsigned *idp, const tdouble3 *pos, con
 
 	//-Graba ficheros con datos de particulas.
 	//-Stores data files of particles.
-//	SavePartData(npok, nout, idp, pos, vel, rhop, gradvel, ndom, vdom, infoplus);
+	//	SavePartData(npok, nout, idp, pos, vel, rhop, gradvel, ndom, vdom, infoplus);
 	SavePartData(npok, nout, idp, pos, vel, rhop, ndom, vdom, infoplus);
 
 	//-Reinicia limites de dt.
