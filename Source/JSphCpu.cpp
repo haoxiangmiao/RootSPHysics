@@ -1039,7 +1039,9 @@ template<bool psimple,TpKernel tker,TpFtMode ftmode,bool lamsps,TpDeltaSph tdelt
                   const float pi_visc=(-visco*cbar*amubar/robar)*massp2*ftmassp1;
                   acep1.x-=pi_visc*frx; acep1.y-=pi_visc*fry; acep1.z-=pi_visc*frz;
 
-				  if (!ftp1){//-When p1 is a fluid particle / Cuando p1 es fluido. 
+				  
+                }
+				if (!ftp1){//-When p1 is a fluid particle / Cuando p1 es fluido. 
 					  const float volp2 = -massp2 / velrhop[p2].w;
 					  float dv = dvx*volp2; gradvelp1.xx += dv*frx; gradvelp1.xy += dv*fry; gradvelp1.xz += dv*frz;
 											omegap1.xy += dv*fry; omegap1.xz += dv*frz;
@@ -1048,8 +1050,7 @@ template<bool psimple,TpKernel tker,TpFtMode ftmode,bool lamsps,TpDeltaSph tdelt
 							dv = dvz*volp2; gradvelp1.xz += dv*frx; gradvelp1.yz += dv*fry; gradvelp1.zz += dv*frz;
 											omegap1.xz -= dv*frx; omegap1.yz -= dv*fry;
 
-				  }
-                }
+				}
               }
               else{//-Laminar+SPS viscosity 
                 {//-Laminar contribution.
@@ -1285,8 +1286,8 @@ void JSphCpu::ComputeSdot(unsigned n, unsigned pini, tsymatrix3f *sdot, const ts
 		// Est-ce a voir avec la parallelisation ?
 		// + Sans doute un update du pointer en meme temps
 		const tsymatrix3f s = S[p];
-		//		const tsymatrix3f gradvel = SpsGradvelc[p];
-		const tsymatrix3f gradvel = {0, 0, 0, 0, 0, 0};
+		const tsymatrix3f gradvel = SpsGradvelc[p];
+//		const tsymatrix3f gradvel = {0, 0, 0, 0, 0, 0};
 		const tsymatrix3f omega = Omega[p];
 
 		const float Mu = 4.27f*1000000.0f; // Mu = 4.27.10^6 Pa

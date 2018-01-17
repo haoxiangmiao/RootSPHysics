@@ -804,11 +804,11 @@ tdouble2* ResizeAlloc(tdouble2 *data,unsigned ndata,unsigned newsize){
 }
 //==============================================================================
 tdouble3* ResizeAlloc(tdouble3 *data, unsigned ndata, unsigned newsize){
-	tdouble3* data2 = new tdouble3[newsize];
-	ndata = std::min(ndata, newsize);
-	if (ndata)memcpy(data2, data, sizeof(tdouble3)*ndata);
-	delete[] data;
-	return(data2);
+  tdouble3* data2 = new tdouble3[newsize];
+  ndata = std::min(ndata, newsize);
+  if (ndata)memcpy(data2, data, sizeof(tdouble3)*ndata);
+  delete[] data;
+  return(data2);
 }
 //Matthias==============================================================================
 tsymatrix3f* ResizeAlloc(tsymatrix3f *data, unsigned ndata, unsigned newsize){
