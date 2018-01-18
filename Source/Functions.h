@@ -154,8 +154,8 @@ tfloat2*  ResizeAlloc(tfloat2  *data,unsigned ndata,unsigned newsize);
 tfloat3*  ResizeAlloc(tfloat3  *data,unsigned ndata,unsigned newsize);
 tfloat4*  ResizeAlloc(tfloat4  *data,unsigned ndata,unsigned newsize);
 double*   ResizeAlloc(double   *data,unsigned ndata,unsigned newsize);
-tdouble2* ResizeAlloc(tdouble2 *data, unsigned ndata, unsigned newsize);
-tdouble3* ResizeAlloc(tdouble3 *data, unsigned ndata, unsigned newsize);
+tdouble2* ResizeAlloc(tdouble2 *data,unsigned ndata,unsigned newsize);
+tdouble3* ResizeAlloc(tdouble3 *data,unsigned ndata,unsigned newsize);
 tsymatrix3f* ResizeAlloc(tsymatrix3f *data, unsigned ndata, unsigned newsize);
 
 bool IsInfinity(float v);

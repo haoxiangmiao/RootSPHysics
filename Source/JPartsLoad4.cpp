@@ -31,7 +31,7 @@ using namespace std;
 //==============================================================================
 JPartsLoad4::JPartsLoad4(){
   ClassName="JPartsLoad4";
-  Idp = NULL; Pos = NULL; VelRhop = NULL; S = NULL;
+  Idp=NULL; Pos = NULL; VelRhop = NULL; S = NULL;
   Reset();
 }
 
