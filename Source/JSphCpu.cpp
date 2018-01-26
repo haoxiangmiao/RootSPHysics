@@ -985,12 +985,12 @@ template<bool psimple,TpKernel tker,TpFtMode ftmode,bool lamsps,TpDeltaSph tdelt
             if(compute){
 //				const float prs = (pressp1 + porep1 + Sp1 + press[p2] + pore[p2]) / (rhopp1*velrhop[p2].w) + (tker == KERNEL_Cubic ? GetKernelCubicTensil(rr2, rhopp1, pressp1 + porep1, velrhop[p2].w, press[p2]+pore[p2]) : 0);
 				const tsymatrix3f prs = {
-					(pressp1 + porep1 + Sp1.xx + press[p2] + pore[p2] + s[p2].xx) / (rhopp1*velrhop[p2].w) + (tker == KERNEL_Cubic ? GetKernelCubicTensil(rr2, rhopp1, pressp1 + porep1, velrhop[p2].w, press[p2] + pore[p2]) : 0),
-					(Sp1.xy + s[p2].xy) / (rhopp1*velrhop[p2].w),
-					(Sp1.xz + s[p2].xz) / (rhopp1*velrhop[p2].w),
-					(pressp1 + porep1 + Sp1.yy + press[p2] + pore[p2] + s[p2].yy) / (rhopp1*velrhop[p2].w) + (tker == KERNEL_Cubic ? GetKernelCubicTensil(rr2, rhopp1, pressp1 + porep1, velrhop[p2].w, press[p2] + pore[p2]) : 0),
-					(Sp1.yz + s[p2].yz) / (rhopp1*velrhop[p2].w),
-					(pressp1 + porep1 + Sp1.zz + press[p2] + pore[p2] + s[p2].zz) / (rhopp1*velrhop[p2].w) + (tker == KERNEL_Cubic ? GetKernelCubicTensil(rr2, rhopp1, pressp1 + porep1, velrhop[p2].w, press[p2] + pore[p2]) : 0)
+					(pressp1 + porep1 - Sp1.xx + press[p2] + pore[p2] - s[p2].xx) / (rhopp1*velrhop[p2].w) + (tker == KERNEL_Cubic ? GetKernelCubicTensil(rr2, rhopp1, pressp1 + porep1, velrhop[p2].w, press[p2] + pore[p2]) : 0),
+					-(Sp1.xy + s[p2].xy) / (rhopp1*velrhop[p2].w),
+					-(Sp1.xz + s[p2].xz) / (rhopp1*velrhop[p2].w),
+					(pressp1 + porep1 - Sp1.yy + press[p2] + pore[p2] - s[p2].yy) / (rhopp1*velrhop[p2].w) + (tker == KERNEL_Cubic ? GetKernelCubicTensil(rr2, rhopp1, pressp1 + porep1, velrhop[p2].w, press[p2] + pore[p2]) : 0),
+					-(Sp1.yz + s[p2].yz) / (rhopp1*velrhop[p2].w),
+					(pressp1 + porep1 - Sp1.zz + press[p2] + pore[p2] - s[p2].zz) / (rhopp1*velrhop[p2].w) + (tker == KERNEL_Cubic ? GetKernelCubicTensil(rr2, rhopp1, pressp1 + porep1, velrhop[p2].w, press[p2] + pore[p2]) : 0)
 				};
 				const tsymatrix3f p_vpm3 = { 
 					-prs.xx*massp2*ftmassp1, -prs.xy*massp2*ftmassp1, -prs.xz*massp2*ftmassp1,
@@ -1028,65 +1028,68 @@ template<bool psimple,TpKernel tker,TpFtMode ftmode,bool lamsps,TpDeltaSph tdelt
             }
 
             //===== Viscosity ===== 
-            if(compute){
-              const float dot=drx*dvx + dry*dvy + drz*dvz;
-              const float dot_rr2=dot/(rr2+Eta2);
-              visc=max(dot_rr2,visc);
-              if(!lamsps){//-Artificial viscosity 
-                if(dot<0){
-                  const float amubar=H*dot_rr2;  //amubar=CTE.h*dot/(rr2+CTE.eta2);
-                  const float robar=(rhopp1+velrhop[p2].w)*0.5f;
-                  const float pi_visc=(-visco*cbar*amubar/robar)*massp2*ftmassp1;
-                  acep1.x-=pi_visc*frx; acep1.y-=pi_visc*fry; acep1.z-=pi_visc*frz;
-
-				  
-                }
-				if (!ftp1){//-When p1 is a fluid particle / Cuando p1 es fluido. 
-					  const float volp2 = -massp2 / velrhop[p2].w;
-					  float dv = dvx*volp2; gradvelp1.xx += dv*frx; gradvelp1.xy += dv*fry; gradvelp1.xz += dv*frz;
-											omegap1.xy += dv*fry; omegap1.xz += dv*frz;
-							dv = dvy*volp2; gradvelp1.xy += dv*frx; gradvelp1.yy += dv*fry; gradvelp1.yz += dv*frz;
-											omegap1.xy -= dv*frx; omegap1.yz += dv*frz;
-							dv = dvz*volp2; gradvelp1.xz += dv*frx; gradvelp1.yz += dv*fry; gradvelp1.zz += dv*frz;
-											omegap1.xz -= dv*frx; omegap1.yz -= dv*fry;
-
+			if (compute){
+				const float dot = drx*dvx + dry*dvy + drz*dvz;
+				const float dot_rr2 = dot / (rr2 + Eta2);
+				visc = max(dot_rr2, visc);
+				if (!lamsps){//-Artificial viscosity 
+					if (dot < 0){
+						const float amubar = H*dot_rr2;  //amubar=CTE.h*dot/(rr2+CTE.eta2);
+						const float robar = (rhopp1 + velrhop[p2].w)*0.5f;
+						const float pi_visc = ((-visco*cbar*amubar+2.0f*amubar*amubar) / robar)*massp2*ftmassp1;
+						acep1.x -= pi_visc*frx; acep1.y -= pi_visc*fry; acep1.z -= pi_visc*frz;
+					}
 				}
-              }
-              else{//-Laminar+SPS viscosity 
-                {//-Laminar contribution.
-                  const float robar2=(rhopp1+velrhop[p2].w);
-                  const float temp=4.f*visco/((rr2+Eta2)*robar2);  //-Simplification of / Simplificacion de: temp=2.0f*visco/((rr2+CTE.eta2)*robar); robar=(rhopp1+velrhop2.w)*0.5f;
-                  const float vtemp=massp2*temp*(drx*frx+dry*fry+drz*frz);  
-                  acep1.x+=vtemp*dvx; acep1.y+=vtemp*dvy; acep1.z+=vtemp*dvz;
-                }
-                //-SPS turbulence model.
-                float tau_xx=taup1.xx,tau_xy=taup1.xy,tau_xz=taup1.xz; //-taup1 is always zero when p1 is not a fluid particle / taup1 siempre es cero cuando p1 no es fluid.
-                float tau_yy=taup1.yy,tau_yz=taup1.yz,tau_zz=taup1.zz;
-                if(!boundp2 && !ftp2){//-Cuando p2 es fluido.  
-                  tau_xx+=tau[p2].xx; tau_xy+=tau[p2].xy; tau_xz+=tau[p2].xz;
-                  tau_yy+=tau[p2].yy; tau_yz+=tau[p2].yz; tau_zz+=tau[p2].zz;
-                }
-                acep1.x+=massp2*ftmassp1*(tau_xx*frx+tau_xy*fry+tau_xz*frz);
-                acep1.y+=massp2*ftmassp1*(tau_xy*frx+tau_yy*fry+tau_yz*frz);
-                acep1.z+=massp2*ftmassp1*(tau_xz*frx+tau_yz*fry+tau_zz*frz);
-                //-Velocity gradients.
-                if(!ftp1){//-When p1 is a fluid particle / Cuando p1 es fluido. 
-                  const float volp2=-massp2/velrhop[p2].w;
-				  float dv = dvx*volp2; gradvelp1.xx += dv*frx; gradvelp1.xy += dv*fry; gradvelp1.xz += dv*frz;
-										omegap1.xy += dv*fry; omegap1.xz += dv*frz;
+				else{//-Laminar+SPS viscosity 
+					{//-Laminar contribution.
+						const float robar2 = (rhopp1 + velrhop[p2].w);
+						const float temp = 4.f*visco / ((rr2 + Eta2)*robar2);  //-Simplification of / Simplificacion de: temp=2.0f*visco/((rr2+CTE.eta2)*robar); robar=(rhopp1+velrhop2.w)*0.5f;
+						const float vtemp = massp2*temp*(drx*frx + dry*fry + drz*frz);
+						acep1.x += vtemp*dvx; acep1.y += vtemp*dvy; acep1.z += vtemp*dvz;
+					}
+					//-SPS turbulence model.
+					float tau_xx = taup1.xx, tau_xy = taup1.xy, tau_xz = taup1.xz; //-taup1 is always zero when p1 is not a fluid particle / taup1 siempre es cero cuando p1 no es fluid.
+					float tau_yy = taup1.yy, tau_yz = taup1.yz, tau_zz = taup1.zz;
+					if (!boundp2 && !ftp2){//-Cuando p2 es fluido.  
+						tau_xx += tau[p2].xx; tau_xy += tau[p2].xy; tau_xz += tau[p2].xz;
+						tau_yy += tau[p2].yy; tau_yz += tau[p2].yz; tau_zz += tau[p2].zz;
+					}
+					acep1.x += massp2*ftmassp1*(tau_xx*frx + tau_xy*fry + tau_xz*frz);
+					acep1.y += massp2*ftmassp1*(tau_xy*frx + tau_yy*fry + tau_yz*frz);
+					acep1.z += massp2*ftmassp1*(tau_xz*frx + tau_yz*fry + tau_zz*frz);
+					//-Velocity gradients.
+					if (!ftp1){//-When p1 is a fluid particle / Cuando p1 es fluido. 
+						const float volp2 = -massp2 / velrhop[p2].w;
+						float dv = dvx*volp2; gradvelp1.xx += dv*frx; gradvelp1.xy += dv*fry; gradvelp1.xz += dv*frz;
 						dv = dvy*volp2; gradvelp1.xy += dv*frx; gradvelp1.yy += dv*fry; gradvelp1.yz += dv*frz;
-										omegap1.xy -= dv*frx; omegap1.yz += dv*frz;
 						dv = dvz*volp2; gradvelp1.xz += dv*frx; gradvelp1.yz += dv*fry; gradvelp1.zz += dv*frz;
-										omegap1.xz -= dv*frx; omegap1.yz -= dv*fry;
+						// to compute tau terms we assume that gradvel.xy=gradvel.dudy+gradvel.dvdx,
+						// gradvel.xz=gradvel.dudz+gradvel.dwdx, gradvel.yz=gradvel.dvdz+gradvel.dwdy
+						// so only 6 elements are needed instead of 3x3.
+					}
+				}
+			}
 
-                  // to compute tau terms we assume that gradvel.xy=gradvel.dudy+gradvel.dvdx, gradvel.xz=gradvel.dudz+gradvel.dwdx, gradvel.yz=gradvel.dvdz+gradvel.dwdy
-                  // so only 6 elements are needed instead of 3x3.
-                }
+			//===== Velocity gradients ===== 
+			if (compute){
+				if (!ftp1){//-When p1 is a fluid particle / Cuando p1 es fluido. 
+					const float volp2 = -massp2 / velrhop[p2].w;
+					float dv = dvx*volp2; 
 
-				// Deviatoric stress update
+					gradvelp1.xx += dv*frx; gradvelp1.xy += dv*fry; gradvelp1.xz += dv*frz;
+					dv = dvy*volp2; gradvelp1.xy += dv*frx; gradvelp1.yy += dv*fry; gradvelp1.yz += dv*frz;
+					dv = dvz*volp2; gradvelp1.xz += dv*frx; gradvelp1.yz += dv*fry; gradvelp1.zz += dv*frz;
 
-              }
-            }
+					/*gradvelp1.xx += dv*frx; gradvelp1.xy += 0.5f*dv*fry; gradvelp1.xz += 0.5f*dv*frz;
+					omegap1.xy += 0.5f*dv*fry; omegap1.xz += 0.5f*dv*frz;
+					dv = dvy*volp2; 
+					gradvelp1.xy += 0.5f*dv*frx; gradvelp1.yy += dv*fry; gradvelp1.yz += 0.5f*dv*frz;
+					omegap1.xy -= 0.5f*dv*frx; omegap1.yz += 0.5f*dv*frz;
+					dv = dvz*volp2; 
+					gradvelp1.xz += 0.5f*dv*frx; gradvelp1.yz += 0.5f*dv*fry; gradvelp1.zz += dv*frz;
+					omegap1.xz -= 0.5f*dv*frx; omegap1.yz -= 0.5f*dv*fry;*/
+				}
+			}			  
           }
         }
       }
@@ -1100,25 +1103,26 @@ template<bool psimple,TpKernel tker,TpFtMode ftmode,bool lamsps,TpDeltaSph tdelt
       const int th=omp_get_thread_num();
       if(visc>viscth[th*STRIDE_OMP])viscth[th*STRIDE_OMP]=visc;
 
-	  // Gradvel and rotation tensor
-        gradvel[p1].xx+=gradvelp1.xx;
-        gradvel[p1].xy+=gradvelp1.xy;
-        gradvel[p1].xz+=gradvelp1.xz;
-        gradvel[p1].yy+=gradvelp1.yy;
-        gradvel[p1].yz+=gradvelp1.yz;
-        gradvel[p1].zz+=gradvelp1.zz;
-
-		omega[p1].xx += omegap1.xx;
-		omega[p1].xy += omegap1.xy;
-		omega[p1].xz += omegap1.xz;
-		omega[p1].yy += omegap1.yy;
-		omega[p1].yz += omegap1.yz;
-		omega[p1].zz += omegap1.zz;
 
       if(shift && shiftpos[p1].x!=FLT_MAX){
         shiftpos[p1]=(shiftposp1.x==FLT_MAX? TFloat3(FLT_MAX,0,0): shiftpos[p1]+shiftposp1);
         if(shiftdetect)shiftdetect[p1]+=shiftdetectp1;
       }
+
+	  // Gradvel and rotation tensor
+      gradvel[p1].xx+=gradvelp1.xx;
+      gradvel[p1].xy+=gradvelp1.xy;
+      gradvel[p1].xz+=gradvelp1.xz;
+      gradvel[p1].yy+=gradvelp1.yy;
+      gradvel[p1].yz+=gradvelp1.yz;
+      gradvel[p1].zz+=gradvelp1.zz;
+
+	  omega[p1].xx += omegap1.xx;
+	  omega[p1].xy += omegap1.xy;
+	  omega[p1].xz += omegap1.xz;
+	  omega[p1].yy += omegap1.yy;
+	  omega[p1].yz += omegap1.yz;
+	  omega[p1].zz += omegap1.zz;
     }
   }
 
@@ -1291,42 +1295,56 @@ void JSphCpu::ComputeSdot(unsigned n, unsigned pini, tsymatrix3f *sdot, const ts
 		const tsymatrix3f omega = Omega[p];
 
 		const float Mu = 4.27f*1000000.0f; // Mu = 4.27.10^6 Pa
-//		const float Mu = 4.27f*1000.0f; // Mu = 4.27.10^3 Pa
-//		const float Mu = 0.0f; //
+		//const float Mu = 4.27f*1000.0f; // Mu = 4.27.10^3 Pa
+		//const float Mu = 4.27f*100.0f; // Mu = 4.27.10^3 Pa
+		//const float Mu = 0.0f; //
 		const tsymatrix3f E = { 
 			2.0f / 3.0f * gradvel.xx - 1.0f / 3.0f * gradvel.yy - 1.0f / 3.0f * gradvel.zz,
 			gradvel.xy,
 			gradvel.xz,
 			2.0f / 3.0f * gradvel.yy - 1.0f / 3.0f * gradvel.xx - 1.0f / 3.0f * gradvel.zz,
 			gradvel.yz,
-			2.0f / 3.0f * gradvel.zz - 1.0f / 3.0f * gradvel.yy - 1.0f / 3.0f * gradvel.xx };
+			2.0f / 3.0f * gradvel.zz - 1.0f / 3.0f * gradvel.xx - 1.0f / 3.0f * gradvel.yy };
 
-/*		sdot[p].xx = 2.0f*Mu*E.xx + 2.0f*s.xy*omega.xy + 2.0f*s.xz*omega.xz;
+		sdot[p].xx = 2.0f*Mu*E.xx + 2.0f*s.xy*omega.xy + 2.0f*s.xz*omega.xz;
 		sdot[p].xy = 2.0f*Mu*E.xy + (s.yy - s.xx)*omega.xy + s.xz*omega.yz + s.yz*omega.xz;
 		sdot[p].xz = 2.0f*Mu*E.xz + (s.zz - s.xx)*omega.xz - s.xy*omega.yz + s.yz*omega.xy;
 		sdot[p].yy = 2.0f*Mu*E.yy - 2.0f*s.xy*omega.xy + 2.0f*s.yz*omega.yz;
 		sdot[p].yz = 2.0f*Mu*E.yz + (s.zz - s.yy)*omega.yz - s.xz*omega.xy - s.xy*omega.xz;
-		sdot[p].yy = 2.0f*Mu*E.zz - 2.0f*s.xz*omega.xz - 2.0f*s.yz*omega.yz;*/
+		sdot[p].zz = 2.0f*Mu*E.zz - 2.0f*s.xz*omega.xz - 2.0f*s.yz*omega.yz; 
 
-		sdot[p].xx = 2.0f*Mu*E.xx;
+		/*sdot[p].xx = 2.0f*Mu*E.xx;
 		sdot[p].xy = 2.0f*Mu*E.xy;
 		sdot[p].xz = 2.0f*Mu*E.xz;
 		sdot[p].yy = 2.0f*Mu*E.yy;
 		sdot[p].yz = 2.0f*Mu*E.yz;
-		sdot[p].yy = 2.0f*Mu*E.zz;
+		sdot[p].zz = 2.0f*Mu*E.zz;*/
 	}
-	//  float maxVel = rhop[10];
-/*	float maxGradVel = 0;
-	float maxOmega = 0;
-	float maxSdot = 0;
-	float maxS = 0;
+
+	/*float max1 = 0, max2 = 0, max3 = 0, max4 = 0, max5 = 0, max6 = 0;
+	float avg = 1 / double(n);
 	for (int p = int(pini); p<pfin; p++) {
-		if (maxGradVel < abs(SpsGradvelc[p].xx))  maxGradVel = abs(SpsGradvelc[p].xx);
-		if (maxOmega < abs(Omega[p].xy))  maxOmega = abs(Omega[p].xy);
-		if (maxS < abs(sdot[p].xx))  maxSdot = abs(sdot[p].xx);
-		if (maxS < abs(S[p].xx))  maxS = abs(S[p].xx);
+		//const tsymatrix3f mes = sdot[p];
+
+		// Moyenne
+		max1 += avg*abs(sdot[p].xx);
+		max2 += avg*abs(sdot[p].xy);
+		max3 += avg*abs(sdot[p].xz);
+		max4 += avg*abs(sdot[p].yy);
+		max5 += avg*abs(sdot[p].yz);
+		max6 += avg*abs(sdot[p].zz);
+
+		// Norm max
+		if (max1 < abs(mes.xx))  max1 = abs(mes.xx);
+		if (max2 < abs(mes.xy))  max2 = abs(mes.xy);
+		if (max3 < abs(mes.xz))  max3 = abs(mes.xz);
+		if (max4 < abs(mes.yy))  max4 = abs(mes.yy);
+		if (max5 < abs(mes.yz))  max5 = abs(mes.yz);
+		if (max6 < abs(mes.zz))  max6 = abs(mes.zz);
 	}
-	Log->Printf("GV - %12.10f, Om - %12.10f, Sdot - %12.10f, S %12.10f - Npok %d\n", maxGradVel, maxOmega, maxSdot, maxS, n);*/
+
+	Log->Printf("GVxx %8.2f, GVxy %8.2f, GVxz %8.2f\n GVyy %8.2f, GVyz %8.2f, GVzz %8.2f, avg %d\n", max1, max2, max3, max4, max5, max6, n);
+	*/
 }
 
 
@@ -1909,25 +1927,112 @@ template<bool shift> void JSphCpu::ComputeVerletVarsFluid(const tfloat4 *velrhop
       velrhopnew[p].w=rhopnew;
 
 	  // Update Deviatoric Stress
-	  // If possible S[p] = S[p] + Sdot[p]*dt2;
-	  s[p].xx = float(double(s2[p].xx) + double(Sdot[p].xx)*dt2);
+	  s[p] = { 36.7f, 30.0f, 20.0f, -33.3f, -10.0f, -3.3f };
+	  /*s[p].xx = float(double(s2[p].xx) + double(Sdot[p].xx)*dt2);
 	  s[p].xy = float(double(s2[p].xy) + double(Sdot[p].xy)*dt2);
 	  s[p].xz = float(double(s2[p].xz) + double(Sdot[p].xz)*dt2);
 	  s[p].yy = float(double(s2[p].yy) + double(Sdot[p].yy)*dt2);
 	  s[p].yz = float(double(s2[p].yz) + double(Sdot[p].yz)*dt2);
-	  s[p].zz = float(double(s2[p].zz) + double(Sdot[p].zz)*dt2);
-//	  Stemp = s[p].xx;
+	  s[p].zz = float(double(s2[p].zz) + double(Sdot[p].zz)*dt2);*/
+
     }
     else{//-Fluid Particles / Particulas: Floating
       velrhopnew[p]=velrhop1[p];
       velrhopnew[p].w=(rhopnew<RhopZero? RhopZero: rhopnew); //-Avoid fluid particles being absorved by floating ones / Evita q las floating absorvan a las fluidas.
     }
   }
-/*  float maxS = 0;
+
+  // Print
+  /*float max1 = 0, max2 = 0, max3 = 0, max4 = 0, max5 = 0, max6 = 0;
+  int n = 1331;
+  float avg = 1 / double(n);
   for (int p = int(pini); p<pfin; p++) {
-	  if (maxS < abs(s[p].xx))  maxS = abs(s[p].xx);
+	  // Moyenne
+	  max1 += avg*abs(s[p].xx);
+	  max2 += avg*abs(s[p].xy);
+	  max3 += avg*abs(s[p].xz);
+	  max4 += avg*abs(s[p].yy);
+	  max5 += avg*abs(s[p].yz);
+	  max6 += avg*abs(s[p].zz);
   }
-  Log->Printf("GV - %12.10f, Om - %12.10f, Sdot - %12.10f, S %12.10f - Npok %d\n", maxGradVel, maxOmega, maxSdot, maxS, n);*/
+
+  Log->Printf("xx %8.2f, xy %8.2f, xz %8.2f\n yy %8.2f, yz %8.2f, Gzz %8.2f, avg %d\n", max1, max2, max3, max4, max5, max6, n);*/
+
+}
+
+//==============================================================================
+/// Calcula nuevos valores de posicion, velocidad y densidad para el fluido (usando Verlet).
+/// Calculate new values of position, velocity & density for fluid (using Verlet).
+//==============================================================================
+template<bool shift> void JSphCpu::ComputeEulerVarsFluid(tfloat4 *velrhop, double dt 
+	, tdouble3 *pos, unsigned *dcell, word *code, tsymatrix3f *s)const
+{
+	const int pini = int(Npb), pfin = int(Np), npf = int(Np - Npb);
+#ifdef _WITHOMP
+#pragma omp parallel for schedule (static) if(npf>LIMIT_COMPUTESTEP_OMP)
+#endif
+	for (int p = pini; p < pfin; p++){
+		const float rhopnew = float(double(velrhop[p].w) + dt*Arc[p]);
+		if (!WithFloating || CODE_GetType(code[p]) == CODE_TYPE_FLUID){//-Fluid Particles / Particulas: Fluid
+			//-Calculate displacement and update position / Calcula desplazamiento y actualiza posicion.
+			double dx = double(velrhop[p].x)*dt;
+			double dy = double(velrhop[p].y)*dt;
+			double dz = double(velrhop[p].z)*dt;
+			if (shift){
+				dx += double(ShiftPosc[p].x);
+				dy += double(ShiftPosc[p].y);
+				dz += double(ShiftPosc[p].z);
+			}
+			bool outrhop = (rhopnew<RhopOutMin || rhopnew>RhopOutMax);
+			UpdatePos(pos[p], dx, dy, dz, outrhop, p, pos, dcell, code);
+
+			//-Update velocity & density / Actualiza velocidad y densidad.
+			velrhop[p].x = float(double(velrhop[p].x) + double(Acec[p].x)*dt);
+			velrhop[p].y = float(double(velrhop[p].y) + double(Acec[p].y)*dt);
+			velrhop[p].z = float(double(velrhop[p].z) + double(Acec[p].z)*dt);
+			velrhop[p].w = rhopnew;
+
+			// Update Deviatoric Stress
+			//s[p] = { 36.7f, 30.0f, 20.0f, -33.3f, -10.0f, -3.3f };
+			s[p].xx = float(double(s[p].xx) + double(Sdot[p].xx)*dt);
+			s[p].xy = float(double(s[p].xy) + double(Sdot[p].xy)*dt);
+			s[p].xz = float(double(s[p].xz) + double(Sdot[p].xz)*dt);
+			s[p].yy = float(double(s[p].yy) + double(Sdot[p].yy)*dt);
+			s[p].yz = float(double(s[p].yz) + double(Sdot[p].yz)*dt);
+			s[p].zz = float(double(s[p].zz) + double(Sdot[p].zz)*dt);
+		}
+		else{//-Fluid Particles / Particulas: Floating
+			velrhop[p].w = (rhopnew<RhopZero ? RhopZero : rhopnew); //-Avoid fluid particles being absorved by floating ones / Evita q las floating absorvan a las fluidas.
+		}
+	}
+
+	// Print
+	/*float max1 = 0, max2 = 0, max3 = 0, max4 = 0, max5 = 0, max6 = 0;
+	int n = 1331;
+	float avg = 1 / double(n);
+	for (int p = int(pini); p<pfin; p++) {
+	// Moyenne
+	max1 += avg*abs(s[p].xx);
+	max2 += avg*abs(s[p].xy);
+	max3 += avg*abs(s[p].xz);
+	max4 += avg*abs(s[p].yy);
+	max5 += avg*abs(s[p].yz);
+	max6 += avg*abs(s[p].zz);
+	}
+
+	Log->Printf("xx %8.2f, xy %8.2f, xz %8.2f\n yy %8.2f, yz %8.2f, Gzz %8.2f, avg %d\n", max1, max2, max3, max4, max5, max6, n);*/
+
+}
+
+void JSphCpu::ComputeEulrhopBound(tfloat4* velrhop, double armul)const{
+	const int npb = int(Npb);
+#ifdef _WITHOMP
+#pragma omp parallel for schedule (static) if(npb>LIMIT_COMPUTESTEP_OMP)
+#endif
+	for (int p = 0; p<npb; p++){
+		const float rhopnew = float(double(velrhop[p].w) + armul*Arc[p]);
+		velrhop[p] = TFloat4(0, 0, 0, (rhopnew<RhopZero ? RhopZero : rhopnew));//-Avoid fluid particles being absorved by boundary ones / Evita q las boundary absorvan a las fluidas.
+	}
 }
 
 //==============================================================================
@@ -1970,6 +2075,18 @@ void JSphCpu::ComputeVerlet(double dt){
   swap(Velrhopc, VelrhopM1c);     //-Swap Velrhopc & VelrhopM1c / Intercambia Velrhopc y VelrhopM1c.
   swap(S, SM1);     //-Swap Deviator values for alternation
   TmcStop(Timers,TMC_SuComputeStep);
+}
+
+
+//==============================================================================
+/// EULER Update of particle
+//==============================================================================
+void JSphCpu::ComputeEuler(double dt){
+	TmcStart(Timers, TMC_SuComputeStep);
+	if (TShifting)ComputeEulerVarsFluid<true>(Velrhopc, dt, Posc, Dcellc, Codec, S);
+	else         ComputeEulerVarsFluid<false>(Velrhopc, dt, Posc, Dcellc, Codec, S);
+	ComputeEulrhopBound(Velrhopc, dt);
+	TmcStop(Timers, TMC_SuComputeStep);
 }
 
 //==============================================================================
@@ -2117,7 +2234,9 @@ double JSphCpu::DtVariable(bool final){
   //-dt2 combines the Courant and the viscous time-step controls.
   const double dt2=double(H)/(max(Cs0,VelMax*10.)+double(H)*ViscDtMax);
   //-dt new value of time step.
-  double dt=double(CFLnumber)*min(dt1,dt2);
+  // TEMP : PETIT PAS DE TEMPS
+  //double dt = 0.1f*double(CFLnumber)*min(dt1, dt2);
+  double dt = double(CFLnumber)*min(dt1, dt2);
   if(DtFixed)dt=DtFixed->GetDt(float(TimeStep),float(dt));
   if(dt<double(DtMin)){ dt=double(DtMin); DtModif++; }
   if(SaveDt && final)SaveDt->AddValues(TimeStep,dt,dt1*CFLnumber,dt2*CFLnumber,AceMax,ViscDtMax,VelMax);

@@ -619,6 +619,21 @@ double JSphCpuSingle::ComputeStep_Ver(){
   return(dt);
 }
 
+
+//==============================================================================
+/// MATTHIAS - EULER EXPLICIT
+//==============================================================================
+double JSphCpuSingle::ComputeStep_Euler(){
+	Interaction_Forces(INTER_Forces);    //-Interaction / Interaccion
+	const double dt = DtVariable(true);    //-Calculate new dt / Calcula nuevo dt
+	DemDtForce = dt;                       //(DEM)
+	if (TShifting)RunShifting(dt);        //-Shifting
+	ComputeEuler(dt);				   //-Update particles using Verlet / Actualiza particulas usando Verlet
+	if (CaseNfloat)RunFloating(dt, false); //-Control of floating bodies / Gestion de floating bodies
+	PosInteraction_Forces();             //-Free memory used for interaction / Libera memoria de interaccion
+	return(dt);
+}
+
 //==============================================================================
 /// Realiza interaccion y actualizacion de particulas segun las fuerzas 
 /// calculadas en la interaccion usando Symplectic.
@@ -862,7 +877,9 @@ void JSphCpuSingle::Run(std::string appname, JCfgRun *cfg, JLog2 *log){
   while (TimeStep<TimeMax){
 
     if(ViscoTime)Visco=ViscoTime->GetVisco(float(TimeStep));
-    double stepdt=ComputeStep();
+    //double stepdt=ComputeStep();
+
+	double stepdt = ComputeStep_Euler();
 	if (PartDtMin>stepdt)PartDtMin = stepdt; if (PartDtMax<stepdt)PartDtMax = stepdt;
 	if (CaseNmoving)RunMotion(stepdt);
 	RunCellDivide(true);
@@ -887,7 +904,7 @@ void JSphCpuSingle::Run(std::string appname, JCfgRun *cfg, JLog2 *log){
 	Nstep++;
 
     //if(Nstep>=3)break;
-//	Log->Printf("FlagEndLoop - %1.8f\n", float(TimeStep));
+
   }
   TimerSim.Stop(); TimerTot.Stop();
 
