@@ -29,7 +29,8 @@ using namespace std;
 JPartsOut::JPartsOut(unsigned sizeini){
   ClassName="JPartsOut";
   SizeIni=sizeini;
-  Idp = NULL; Pos = NULL; Vel = NULL; Rhop = NULL; S = NULL;
+  Idp=NULL; Pos=NULL; Vel=NULL; Rhop=NULL; 
+  S = NULL;
   Reset();
 }
 
@@ -56,8 +57,8 @@ void JPartsOut::AllocMemory(unsigned size,bool reset){
     Count=0;
     delete[] Idp;  Idp=NULL;
     delete[] Pos;  Pos=NULL;
-	delete[] Vel;  Vel = NULL;
-	delete[] Rhop; Rhop = NULL;
+	delete[] Vel;  Vel=NULL;
+	delete[] Rhop; Rhop=NULL;
 	delete[] S; S = NULL;
   }
   Size=(!Size && size<SizeIni? SizeIni: size);
@@ -66,8 +67,8 @@ void JPartsOut::AllocMemory(unsigned size,bool reset){
     try{
       Idp=fun::ResizeAlloc(Idp,Count,Size);
       Pos=fun::ResizeAlloc(Pos,Count,Size);
-	  Vel = fun::ResizeAlloc(Vel, Count, Size);
-	  Rhop = fun::ResizeAlloc(Rhop, Count, Size);
+	  Vel=fun::ResizeAlloc(Vel,Count,Size);
+	  Rhop=fun::ResizeAlloc(Rhop,Count,Size);
 	  S = fun::ResizeAlloc(S, Count, Size);
     }
     catch(const std::bad_alloc){
@@ -85,8 +86,8 @@ llong JPartsOut::GetAllocMemory()const{
   //Allocated in AllocMemory()
   if(Idp)s+=sizeof(unsigned)*Size;
   if(Pos)s+=sizeof(tdouble3)*Size;
-  if (Vel)s += sizeof(tfloat3)*Size;
-  if (Rhop)s += sizeof(float)*Size;
+  if (Vel)s+=sizeof(tfloat3)*Size;
+  if (Rhop)s+=sizeof(float)*Size;
   if (S)s += sizeof(float)*Size;
   return(s);
 }
@@ -94,6 +95,17 @@ llong JPartsOut::GetAllocMemory()const{
 //==============================================================================
 /// Resizes arrays for particles.
 //==============================================================================
+void JPartsOut::AddParticles(unsigned np, const unsigned* idp, const tdouble3* pos, const tfloat3* vel, const float* rhop, unsigned outrhop, unsigned outmove){
+	if (Count+np>Size)AllocMemory(Count + np + SizeIni, false);
+	memcpy(Idp+Count,idp,sizeof(unsigned)*np);
+	memcpy(Pos+Count,pos,sizeof(tdouble3)*np);
+	memcpy(Vel+Count,vel,sizeof(tfloat3)*np);
+	memcpy(Rhop+Count,rhop,sizeof(float)*np);
+	Count+=np;
+	OutPosCount+=np-(outrhop+outmove);
+	OutRhopCount+=outrhop;
+	OutMoveCount+=outmove;
+}
 void JPartsOut::AddParticles(unsigned np, const unsigned* idp, const tdouble3* pos, const tfloat3* vel, const float* rhop, const tsymatrix3f *s, unsigned outrhop, unsigned outmove){
 	if (Count + np>Size)AllocMemory(Count + np + SizeIni, false);
 	memcpy(Idp + Count, idp, sizeof(unsigned)*np);
@@ -101,18 +113,6 @@ void JPartsOut::AddParticles(unsigned np, const unsigned* idp, const tdouble3* p
 	memcpy(Vel + Count, vel, sizeof(tfloat3)*np);
 	memcpy(Rhop + Count, rhop, sizeof(float)*np);
 	memcpy(S + Count, s, sizeof(tsymatrix3f)*np);
-	Count += np;
-	OutPosCount += np - (outrhop + outmove);
-	OutRhopCount += outrhop;
-	OutMoveCount += outmove;
-}
-
-void JPartsOut::AddParticles(unsigned np, const unsigned* idp, const tdouble3* pos, const tfloat3* vel, const float* rhop, unsigned outrhop, unsigned outmove){
-	if (Count + np>Size)AllocMemory(Count + np + SizeIni, false);
-	memcpy(Idp + Count, idp, sizeof(unsigned)*np);
-	memcpy(Pos + Count, pos, sizeof(tdouble3)*np);
-	memcpy(Vel + Count, vel, sizeof(tfloat3)*np);
-	memcpy(Rhop + Count, rhop, sizeof(float)*np);
 	Count += np;
 	OutPosCount += np - (outrhop + outmove);
 	OutRhopCount += outrhop;

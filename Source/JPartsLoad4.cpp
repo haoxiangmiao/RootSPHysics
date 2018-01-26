@@ -31,7 +31,8 @@ using namespace std;
 //==============================================================================
 JPartsLoad4::JPartsLoad4(){
   ClassName="JPartsLoad4";
-  Idp=NULL; Pos = NULL; VelRhop = NULL; S = NULL;
+  Idp=NULL; Pos=NULL; VelRhop=NULL; 
+  S = NULL;
   Reset();
 }
 
@@ -249,18 +250,18 @@ void JPartsLoad4::RemoveBoundary(){
   unsigned count0=Count;
   unsigned *idp0=Idp;        Idp=NULL;
   tdouble3 *pos0=Pos;        Pos=NULL;
-  tfloat4 *velrhop0 = VelRhop; VelRhop = NULL;
+  tfloat4 *velrhop0=VelRhop; VelRhop=NULL;
   tsymatrix3f *s0 = S; S = NULL;
   AllocMemory(count0-nbound);
   //-Copies data in new pointers.
   memcpy(Idp,idp0+nbound,sizeof(unsigned)*Count);
   memcpy(Pos,pos0+nbound,sizeof(tdouble3)*Count);
-  memcpy(VelRhop, velrhop0 + nbound, sizeof(tfloat4)*Count);
+  memcpy(VelRhop,velrhop0+nbound,sizeof(tfloat4)*Count);
   memcpy(S, s0 + nbound, sizeof(tsymatrix3f)*Count);
   //-Frees old pointers.
   delete[] idp0;      idp0=NULL; 
   delete[] pos0;      pos0=NULL; 
-  delete[] velrhop0;  velrhop0 = NULL;
+  delete[] velrhop0;  velrhop0=NULL;
   delete[] s0;  s0 = NULL;
 }
 
