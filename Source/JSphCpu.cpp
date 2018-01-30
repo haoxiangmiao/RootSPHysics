@@ -586,9 +586,15 @@ void JSphCpu::PreInteractionVars_Forces(TpInter tinter,unsigned np,unsigned npb)
   #endif
   for(int p=0;p<n;p++){
     const float rhop=Velrhopc[p].w,rhop_r0=rhop/RhopZero;
-    Pressc[p]=CteB*(pow(rhop_r0,Gamma)-1.0f);
-	Pore[p] = 0;
-//	S[p] = {0,0,0,0,0,0};
+	Pore[p] = 2000000.0f;
+	if (p>npb){
+		Pressc[p] = CteB*(pow(rhop_r0, Gamma) - 1.0f);
+	}
+	else {
+		Pressc[p] = -Pore[p];
+	
+	}
+	//Pore[p] = 0.0f;
   }
 }
 
