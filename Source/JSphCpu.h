@@ -76,6 +76,10 @@ protected:
   tfloat4 *VelrhopM1c;  ///<Verlet: in order to keep previous values / Verlet: para guardar valores anteriores
   int VerletStep;
 
+
+  //-Variables for compute step: EULER
+  int EulerStep;
+
   //-Variables for compute step: SYMPLECTIC / Vars. para compute step: SYMPLECTIC
   tdouble3 *PosPrec;  ///<Sympletic: in order to keep previous values / Sympletic: para guardar valores en predictor
   tfloat4 *VelrhopPrec;
@@ -231,7 +235,13 @@ protected:
 	  tdouble3 *pos, unsigned *cell, word *code, tfloat4 *velrhopnew, tsymatrix3f *s, tsymatrix3f *s2)const;
   void ComputeVelrhopBound(const tfloat4* velrhopold,double armul,tfloat4* velrhopnew)const;
 
+
+  template<bool shift> void ComputeEulerVarsFluid(tfloat4 *velrhop, double dt, 
+	  tdouble3 *pos, unsigned *cell, word *code, tsymatrix3f *s)const;
+  void ComputeEulrhopBound(tfloat4* velrhopold, double armul)const;
+
   void ComputeVerlet(double dt);
+  void ComputeEuler(double dt);
   template<bool shift> void ComputeSymplecticPreT(double dt);
   void ComputeSymplecticPre(double dt);
   template<bool shift> void ComputeSymplecticCorrT(double dt);
